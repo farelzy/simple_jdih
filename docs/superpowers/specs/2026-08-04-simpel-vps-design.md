@@ -34,7 +34,7 @@ tambahan Rp 0 karena VPS-nya sudah ada dan sudah dibayar.
 | Backend | Express (Node 22) | Sama dengan BagiBayar; tanpa batas CPU seperti serverless |
 | Database | **MariaDB lokal** yang sudah berjalan | Hanya makan 22 MB; MySQL-compatible sehingga `mysql2` terpakai apa adanya |
 | Berkas | Google Drive, browser langsung ke Drive | Tidak membebani disk dan RAM VPS |
-| Cermin | Google Sheets, disalin tiap perubahan | Bagian Hukum tetap punya spreadsheet untuk dibuka |
+| Spreadsheet | **Tidak dicerminkan.** Export Excel dan Drive saat dibutuhkan | Cermin terus-menerus adalah satu-satunya bagian yang bisa gagal diam-diam dan membuat spreadsheet berbohong tanpa ada yang sadar |
 | TLS & proxy | Caddy (sudah terpasang) | Sudah terbukti melayani 2 domain dengan Let's Encrypt |
 | Login OPD | **Tidak ada** | Pemohon cukup mengisi form; monitoring terbuka |
 | Login admin | Email + kata sandi | Hanya untuk Bagian Hukum, jumlahnya sedikit |
@@ -99,7 +99,7 @@ Browser
                      └─► /api/* ─► Express (systemd, MemoryMax=200M)
                                      │
                                      ├─► MariaDB lokal   (sumber kebenaran)
-                                     ├─► Google Sheets   (cermin)
+                                     ├─► Google Sheets   (dibaca sekali saat migrasi)
                                      └─► Google Drive    (sesi unggah, export, backup)
 ```
 
@@ -129,8 +129,7 @@ MariaDB, database `simpel`. Relasional sungguhan — bukan lagi baris spreadshee
 opd          (id, kode, nama_resmi, nama_singkat, aktif)
 pengajuan    (id, nomor UNIQUE, opd_id, jenis_peraturan, judul,
               nama_pemohon, wa_pemohon, email_pemohon, status,
-              keterangan, dibuat_pada, diperbarui_pada, diperbarui_oleh,
-              sinkron_tertunda)
+              keterangan, dibuat_pada, diperbarui_pada, diperbarui_oleh)
 berkas       (id, pengajuan_id, kolom, nama, ukuran, mime,
               drive_file_id, url, diunggah_pada)
 riwayat      (id, pengajuan_id, tanggal, tahap, keterangan,
@@ -148,7 +147,6 @@ Perbaikan nyata dibanding versi spreadsheet:
   sel. Ukuran, jenis, dan id Drive tiap berkas tercatat rapi.
 - **`opd_id` foreign key**, bukan nama yang diketik bebas. Lima ejaan BPKAD tidak
   bisa lahir lagi secara struktural.
-- **`sinkron_tertunda`** menandai baris yang gagal disalin ke Sheets.
 
 ---
 
@@ -197,18 +195,18 @@ OPD · kelola admin · pengaturan · log audit.
 - **Excel (`.xlsx`)** — diunduh langsung
 - **Ke Google Drive** — salinan dikirim ke folder arsip
 
-### 6.6 Cermin ke Google Sheets
+Kolom `Tanggal dan Detail Proses` pada hasil export disusun ulang dari tabel
+`riwayat` lewat `susunKolomProses`, bentuknya sama persis dengan yang selama ini
+diketik manual — sehingga siapa pun yang terbiasa membaca spreadsheet tetap
+menemukan isi yang dikenalnya.
 
-Setiap perubahan disalin ke spreadsheet supaya Bagian Hukum tetap punya sheet
-mutakhir untuk dibuka. Kolom 16 `Tanggal dan Detail Proses` disusun ulang dari
-tabel `riwayat`, bentuknya sama persis dengan yang selama ini diketik manual.
+Cermin otomatis ke Google Sheets **sengaja tidak dibangun**. Sinkronisasi
+terus-menerus adalah satu-satunya bagian sistem yang bisa gagal tanpa suara,
+dan spreadsheet yang diam-diam ketinggalan lebih berbahaya daripada tidak ada
+spreadsheet sama sekali. Export sesuai kebutuhan memberi hasil yang sama tanpa
+menanggung risiko itu.
 
-**Kegagalan cermin tidak boleh senyap.** Baris yang gagal disalin ditandai
-`sinkron_tertunda = 1`, muncul sebagai peringatan di dashboard, dan dicoba ulang
-berkala. Cermin yang diam-diam ketinggalan lebih berbahaya daripada cermin yang
-jelas-jelas rusak.
-
-### 6.7 Backup
+### 6.6 Backup
 
 `mysqldump` tiap malam lewat cron, diunggah ke Google Drive, disimpan 30 hari
 terakhir. Data hukum di satu VPS tanpa cadangan adalah risiko nyata, dan karena
@@ -269,7 +267,7 @@ simpel/
 │   │   ├── index.ts              # bootstrap Express
 │   │   ├── db.ts                 # pool mysql2
 │   │   ├── rute/                 # publik.ts, pengajuan.ts, admin.ts, unggah.ts, export.ts
-│   │   ├── layanan/              # drive.ts, sheets.ts, cermin.ts, backup.ts
+│   │   ├── layanan/              # google.ts, drive.ts, sheets.ts, excel.ts
 │   │   ├── murni/                # skema, validasi, penomoran, parser-riwayat, rekap
 │   │   ├── tengah/               # auth.ts, rate-limit.ts, galat.ts
 │   │   └── migrasi/              # dari-spreadsheet.ts
@@ -295,8 +293,7 @@ simpel/
 | Keadaan | Perilaku |
 |---|---|
 | MariaDB tidak bisa dihubungi | Halaman monitoring menampilkan pesan jelas, bukan halaman kosong |
-| Cermin Sheets gagal | Baris ditandai `sinkron_tertunda`, muncul peringatan di dashboard, dicoba ulang |
-| Refresh token Google kedaluwarsa | Unggah dan cermin berhenti dengan pesan tegas di dashboard; pengajuan tetap tersimpan di database |
+| Refresh token Google kedaluwarsa | Unggah dan export berhenti dengan pesan tegas yang menyebut cara memperbaikinya; pengajuan yang sudah masuk tetap tersimpan di database |
 | Kuota Drive habis | Unggah ditolak dengan pesan yang menyebut sebabnya |
 | Unggah putus di tengah | Sesi bertahap bisa dilanjutkan; berkas gagal tidak meninggalkan baris di database |
 | Proses kehabisan memori | systemd mematikan dan menghidupkan ulang hanya SIMPEL |
@@ -311,7 +308,8 @@ simpel/
   bolak-balik kolom 16 bersih
 - **Manual** — unggah 30 MB sampai selesai; unggah diputus lalu diulang; dua
   admin menambah riwayat pada pengajuan yang sama; pengunjung tanpa akses membuka
-  `/admin`; cermin Sheets dimatikan paksa untuk memastikan peringatannya muncul
+  `/admin`; refresh token dicabut paksa untuk memastikan pesan perbaikannya muncul
+  dan pengajuan yang sudah masuk tetap aman
 
 ---
 
@@ -327,9 +325,8 @@ simpel/
 | 6 | Integrasi Drive + unggah bertahap | Berkas 30 MB terbukti naik |
 | 7 | Form pengajuan 4 langkah + rate limit | Menggantikan Google Form |
 | 8 | Dashboard admin lengkap | Bagian Hukum berhenti mengetik di sel |
-| 9 | Cermin Sheets + penanda tertunda | Spreadsheet selalu mutakhir |
-| 10 | Export Excel & Drive, backup nightly | Siap dipakai penuh |
-| 11 | Rapikan tampilan, uji ponsel, panduan | Siap diserahkan |
+| 9 | Export Excel & Drive, backup nightly | Siap dipakai penuh |
+| 10 | Rapikan tampilan, uji ponsel, panduan | Siap diserahkan |
 
 Tahap 6 sengaja mendahului form pengajuan: unggah berkas adalah bagian yang
 paling mungkin gagal, jadi dibuktikan lebih dulu sebelum banyak pekerjaan lain

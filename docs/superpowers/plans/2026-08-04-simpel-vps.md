@@ -4,7 +4,7 @@
 
 **Goal:** Memindahkan SIMPEL Hukum Brebes dari Google Apps Script ke aplikasi mandiri di VPS, dengan paritas fitur penuh terhadap `GAS_version/`.
 
-**Architecture:** Express (Node 22, TypeScript) melayani `/api/*` di belakang Caddy, yang sekaligus menyajikan hasil `vite build` sebagai berkas statis dari satu origin. MariaDB lokal jadi sumber kebenaran. Berkas diunggah browser langsung ke Google Drive lewat sesi bertahap yang dibuat server, sehingga bytes tidak pernah melewati Express. Setiap perubahan dicerminkan ke Google Sheets supaya Bagian Hukum tetap punya spreadsheet untuk dibuka.
+**Architecture:** Express (Node 22, TypeScript) melayani `/api/*` di belakang Caddy, yang sekaligus menyajikan hasil `vite build` sebagai berkas statis dari satu origin. MariaDB lokal jadi sumber kebenaran. Berkas diunggah browser langsung ke Google Drive lewat sesi bertahap yang dibuat server, sehingga bytes tidak pernah melewati Express. Google Sheets hanya dibaca sekali saat migrasi awal — tidak ada sinkronisasi berjalan; Bagian Hukum mendapat spreadsheet lewat Export saat dibutuhkan.
 
 **Tech Stack:** Node 22 · TypeScript · Express 4 · `mysql2/promise` · MariaDB · React 19 · Vite · Tailwind 4 · React Router 7 · `bcryptjs` · `jsonwebtoken` · `exceljs` · Vitest · systemd · Caddy
 
@@ -62,8 +62,7 @@ vps/
 │       ├── layanan/
 │       │   ├── google.ts          # token OAuth + pemanggil REST
 │       │   ├── drive.ts
-│       │   ├── sheets.ts
-│       │   ├── cermin.ts
+│       │   ├── sheets.ts          # hanya baca, dipakai migrasi sekali
 │       │   └── excel.ts
 │       ├── tengah/                # middleware
 │       │   ├── auth.ts
@@ -133,10 +132,9 @@ vps/
 | 11 | Admin: antrean, tambah riwayat, ubah status | Bagian Hukum berhenti mengetik di sel |
 | 12 | Admin: rekap, OPD, kelola admin, pengaturan, log | Paritas dashboard tercapai |
 | 13 | Migrasi dari spreadsheet + laporan | 29 baris hidup di MariaDB |
-| 14 | Cermin ke Google Sheets + penanda tertunda | Spreadsheet selalu mutakhir |
-| 15 | Export Excel + kirim ke Drive | Rekap bisa diunduh dan diarsipkan |
-| 16 | Backup `mysqldump` → Drive | Data punya cadangan di luar VPS |
-| 17 | systemd, Caddy, subdomain, panduan | Live di subdomain |
+| 14 | Export Excel + kirim ke Drive | Rekap bisa diunduh dan diarsipkan |
+| 15 | Backup `mysqldump` → Drive | Data punya cadangan di luar VPS |
+| 16 | systemd, Caddy, subdomain, panduan | Live di subdomain |
 
 Tugas 9 sengaja mendahului form pengajuan: unggah berkas adalah bagian yang paling mungkin gagal, jadi dibuktikan lebih dulu sebelum banyak pekerjaan menumpuk di atasnya.
 
@@ -231,8 +229,10 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REFRESH_TOKEN=
 
-# Folder Drive tujuan berkas, dan spreadsheet yang dicerminkan
+# Folder Drive tujuan berkas dan hasil export
 DRIVE_FOLDER_ID=
+# Spreadsheet lama — hanya dibaca sekali saat migrasi awal, boleh dikosongkan
+# setelah migrasi selesai
 SHEETS_ID=
 ```
 
@@ -417,11 +417,9 @@ CREATE TABLE IF NOT EXISTS pengajuan (
   dibuat_pada      DATETIME     NOT NULL,
   diperbarui_pada  DATETIME     NOT NULL,
   diperbarui_oleh  VARCHAR(255) NOT NULL DEFAULT '',
-  sinkron_tertunda TINYINT(1)   NOT NULL DEFAULT 1,
   CONSTRAINT fk_pengajuan_opd FOREIGN KEY (opd_id) REFERENCES opd(id) ON DELETE SET NULL,
   INDEX idx_status (status),
-  INDEX idx_dibuat (dibuat_pada),
-  INDEX idx_sinkron (sinkron_tertunda)
+  INDEX idx_dibuat (dibuat_pada)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS berkas (
@@ -1193,7 +1191,6 @@ export interface Pengajuan {
   nama_pemohon: string; wa_pemohon: string; email_pemohon: string;
   status: Status; keterangan: string;
   dibuat_pada: string; diperbarui_pada: string; diperbarui_oleh: string;
-  sinkron_tertunda: number;
 }
 export interface PengajuanBaru {
   opd_id: number | null; opd_teks: string;
@@ -1204,9 +1201,6 @@ export function pengajuanBuat(data: PengajuanBaru, conn?: PoolConnection): Promi
 export function pengajuanSemua(): Promise<Pengajuan[]>;
 export function pengajuanCariNomor(nomor: string): Promise<Pengajuan | null>;
 export function pengajuanUbahStatus(nomor: string, status: Status, alasan: string, oleh: string): Promise<void>;
-export function pengajuanTandaiTertunda(id: number): Promise<void>;
-export function pengajuanTandaiTersinkron(id: number): Promise<void>;
-export function pengajuanTertunda(): Promise<Pengajuan[]>;
 
 // riwayat.ts
 export interface Riwayat { id: number; pengajuan_id: number; tanggal: string; tahap: string;
@@ -1318,12 +1312,12 @@ describe('status dan riwayat', () => {
       .rejects.toThrow(/[Tt]ahap/);
   });
 
-  it('mengubah status menandai baris perlu disinkron ulang', async () => {
-    const { id, nomor } = await pengajuanBuat(CONTOH);
-    await kueri(`UPDATE pengajuan SET sinkron_tertunda = 0 WHERE id = ?`, [id]);
-    await pengajuanUbahStatus(nomor, 'SELESAI', '', 'a@uji.local');
+  it('mengubah status memperbarui jejak siapa dan kapan', async () => {
+    const { nomor } = await pengajuanBuat(CONTOH);
+    await pengajuanUbahStatus(nomor, 'SELESAI', '', 'admin@uji.local');
     const p = await pengajuanCariNomor(nomor);
-    expect(p!.sinkron_tertunda).toBe(1);
+    expect(p!.status).toBe('SELESAI');
+    expect(p!.diperbarui_oleh).toBe('admin@uji.local');
   });
 });
 ```
@@ -1378,8 +1372,8 @@ export async function pengajuanBuat(
       `INSERT INTO pengajuan
         (nomor, opd_id, opd_teks, jenis_peraturan, judul, nama_pemohon, wa_pemohon,
          email_pemohon, status, keterangan, dibuat_pada, diperbarui_pada,
-         diperbarui_oleh, sinkron_tertunda)
-       VALUES (?,?,?,?,?,?,?,?, 'PROSES', '', NOW(), NOW(), ?, 1)`,
+         diperbarui_oleh)
+       VALUES (?,?,?,?,?,?,?,?, 'PROSES', '', NOW(), NOW(), ?)`,
       [nomor, data.opd_id, data.opd_teks, data.jenis_peraturan, data.judul,
        data.nama_pemohon, data.wa_pemohon, data.email_pemohon, data.email_pemohon]
     );
@@ -1400,8 +1394,7 @@ export async function pengajuanUbahStatus(
     `UPDATE pengajuan
         SET status = ?,
             keterangan = CASE WHEN ? <> '' THEN ? ELSE keterangan END,
-            diperbarui_pada = NOW(), diperbarui_oleh = ?,
-            sinkron_tertunda = 1
+            diperbarui_pada = NOW(), diperbarui_oleh = ?
       WHERE nomor = ?`,
     [status, alasan.trim(), alasan.trim(), oleh, nomor]
   );
@@ -1409,7 +1402,7 @@ export async function pengajuanUbahStatus(
 }
 ```
 
-`riwayat.ts` memvalidasi `tahap` terhadap `TAHAP_RIWAYAT` dan menandai `sinkron_tertunda = 1` pada pengajuan induknya setiap kali baris riwayat ditambahkan.
+`riwayat.ts` memvalidasi `tahap` terhadap `TAHAP_RIWAYAT` sebelum menyisipkan, dan memperbarui `diperbarui_pada` pada pengajuan induknya supaya antrean admin mengurutkan dengan benar.
 
 - [ ] **Step 4: Jalankan uji untuk memastikan lulus**
 
@@ -2342,61 +2335,34 @@ git commit -m "feat: one-time spreadsheet migration with dry-run and round-trip 
 
 ---
 
-### Task 14: Cermin ke Google Sheets
-
-**Files:** `vps/server/src/layanan/cermin.ts`, `vps/server/src/uji/cermin.test.ts`
-
-**Interfaces:**
-- Produces:
-  - `cerminSatu(pengajuanId) -> Promise<void>`
-  - `cerminTertunda() -> Promise<{ berhasil: number; gagal: number }>`
-  - `cerminHitungTertunda() -> Promise<number>`
-
-Kolom 16 disusun ulang dari tabel `riwayat` lewat `susunKolomProses`, bentuknya sama persis dengan yang selama ini diketik manual.
-
-**Kegagalan cermin tidak boleh senyap.** Uji yang wajib:
-
-```ts
-it('kegagalan Sheets tidak membatalkan penyimpanan pengajuan', async () => {
-  vi.spyOn(sheets, 'sheetsTulis').mockRejectedValue(new GalatGoogle(500, 'Sheets down'));
-  const { id, nomor } = await pengajuanBuat(CONTOH);
-  await expect(cerminSatu(id)).rejects.toThrow();
-  // Pengajuannya tetap ada — data tidak boleh hilang gara-gara cermin.
-  expect(await pengajuanCariNomor(nomor)).not.toBeNull();
-});
-
-it('baris yang gagal disalin tetap bertanda tertunda', async () => {
-  vi.spyOn(sheets, 'sheetsTulis').mockRejectedValue(new GalatGoogle(500, 'Sheets down'));
-  const { id } = await pengajuanBuat(CONTOH);
-  await cerminSatu(id).catch(() => {});
-  expect(await cerminHitungTertunda()).toBeGreaterThan(0);
-});
-
-it('penandaan hilang hanya setelah salinan benar-benar berhasil', async () => {
-  vi.spyOn(sheets, 'sheetsTulis').mockResolvedValue(undefined);
-  const { id } = await pengajuanBuat(CONTOH);
-  await cerminSatu(id);
-  const p = await satu<{ sinkron_tertunda: number }>(
-    `SELECT sinkron_tertunda FROM pengajuan WHERE id = ?`, [id]);
-  expect(p!.sinkron_tertunda).toBe(0);
-});
-```
-
-Jumlah tertunda ikut di `GET /api/admin/antrean` dan muncul sebagai peringatan di dashboard. Cermin yang diam-diam ketinggalan lebih berbahaya daripada cermin yang jelas-jelas rusak. `cerminTertunda()` dijalankan `setInterval` tiap 5 menit.
-
-```bash
-git commit -m "feat: Google Sheets mirror with visible pending-sync flag"
-```
-
----
-
-### Task 15: Export Excel dan ke Google Drive
+### Task 14: Export Excel dan ke Google Drive
 
 **Files:** `vps/server/src/layanan/excel.ts`, `vps/server/src/rute/export.ts`
 
 **Interfaces:** `GET /api/export/excel` (unduh `.xlsx`), `POST /api/export/drive` → `{ url }`
 
-Uji: header sesuai urutan yang ditentukan; judul bertanda koma dan kutip tidak menggeser kolom; berkas yang dihasilkan bisa dibuka `ExcelJS.Workbook().xlsx.load`.
+Kolom yang dihasilkan mengikuti urutan spreadsheet lama supaya hasilnya langsung dikenali: `ID`, `Tanggal Masuk`, `OPD`, `Jenis`, `Judul`, `Status`, `Tanggal dan Detail Proses`, `Keterangan`, `Nama Pemohon`, `Nomor WhatsApp`.
+
+Kolom `Tanggal dan Detail Proses` disusun ulang dari tabel `riwayat` lewat `susunKolomProses` — bentuknya sama persis dengan yang selama ini diketik manual, sehingga siapa pun yang terbiasa membaca spreadsheet menemukan isi yang dikenalnya.
+
+Uji yang wajib:
+
+```ts
+it('header sesuai urutan spreadsheet lama', async () => { /* ... */ });
+
+it('judul bertanda koma dan kutip tidak menggeser kolom', async () => {
+  // 'Raperbup "Percontohan", Tahap I' harus utuh dalam SATU sel
+});
+
+it('kolom proses disusun ulang dari riwayat, bukan disalin mentah', async () => {
+  const buku = await bacaHasilExcel();
+  expect(selDi(buku, 'G2')).toBe(
+    '- 22 Juli 2026 Berkas masuk ke sistem\n- 23 Juli 2026 Berkas sedang direviu Bagian Hukum'
+  );
+});
+
+it('berkas yang dihasilkan bisa dibuka kembali oleh ExcelJS', async () => { /* ... */ });
+```
 
 ```bash
 git commit -m "feat: Excel export and archive-to-Drive"
@@ -2404,7 +2370,7 @@ git commit -m "feat: Excel export and archive-to-Drive"
 
 ---
 
-### Task 16: Backup harian ke Drive
+### Task 15: Backup harian ke Drive
 
 **Files:** `vps/server/src/perintah/backup.ts`, `vps/deploy/backup.sh`
 
@@ -2418,7 +2384,7 @@ git commit -m "feat: nightly database backup to Google Drive"
 
 ---
 
-### Task 17: Deploy — systemd, Caddy, subdomain, panduan
+### Task 16: Deploy — systemd, Caddy, subdomain, panduan
 
 **Files:** `vps/deploy/simpel.service`, `vps/deploy/Caddyfile.contoh`, `vps/README.md`
 
@@ -2501,16 +2467,20 @@ git commit -m "docs: deployment units, Caddy config, and operations guide"
 | 6.2 Form pengajuan | 10 |
 | 6.3 Perlindungan form terbuka | 9 (rate limit), 10 (honeypot) |
 | 6.4 Admin | 4, 11, 12 |
-| 6.5 Export | 15 |
-| 6.6 Cermin Sheets | 14 |
-| 6.7 Backup | 16 |
+| 6.5 Export | 14 |
+| 6.6 Backup | 15 |
 | 7 Migrasi | 13 |
 | 8 Modul yang diselamatkan | 3 |
-| 10 Penanganan galat | 6 (`tangkapGalat`), 8 (`GalatGoogle`), 14 (tertunda), 17 (`MemoryMax`) |
-| 11 Pengujian | tersebar; verifikasi manual di 9, 13, 16, 17 |
+| 10 Penanganan galat | 6 (`tangkapGalat`), 8 (`GalatGoogle`), 16 (`MemoryMax`) |
+| 11 Pengujian | tersebar; verifikasi manual di 9, 13, 15, 16 |
 
 **Paritas dengan `GAS_version`.** Diperiksa satu per satu: wizard penyiapan (digantikan `.env` + `siapkanSkema`), monitoring, detail, form 4 langkah, unggah bertahap, antrean, tambah riwayat, ubah status beralasan, rekap, CSV/Excel, kelola OPD, kelola admin, pengaturan, log audit, dua sakelar keterbukaan, penamaan berkas otomatis, migrasi kolom 16. Tidak ada yang hilang.
 
 **Konsistensi nama.** `pengajuanBuat`, `riwayatTambah`, `berkasTambah`, `pengaturanSemua`, `validasiBerkas`, `susunKolomProses`, `driveBuatSesiUnggah`, `googleFetch`, `wajibAdmin` dipakai dengan tanda tangan yang sama di setiap tugas yang memanggilnya.
 
-**Yang sengaja tidak dibangun:** pemberitahuan email (diputuskan tidak perlu), login OPD (diputuskan tidak perlu), wizard penyiapan berbasis web (digantikan `.env`, karena di VPS konfigurasi memang tempatnya di sana).
+**Yang sengaja tidak dibangun:**
+
+- **Pemberitahuan email** — diputuskan tidak perlu; OPD memantau lewat nomor pengajuan
+- **Login OPD** — diputuskan tidak perlu; form dan monitoring terbuka
+- **Wizard penyiapan berbasis web** — digantikan `.env`, karena di VPS konfigurasi memang tempatnya di sana
+- **Cermin otomatis ke Google Sheets** — sinkronisasi terus-menerus adalah satu-satunya bagian yang bisa gagal tanpa suara, dan spreadsheet yang diam-diam ketinggalan lebih berbahaya daripada tidak ada spreadsheet sama sekali. Export Excel (Tugas 14) memberi hasil yang sama tanpa risiko itu, dan kolom `Tanggal dan Detail Proses`-nya tetap disusun ulang persis seperti tulisan tangan Bagian Hukum
