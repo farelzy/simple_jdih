@@ -1,0 +1,22 @@
+# Arsip proyek Google Apps Script — punya repositori git sendiri
+simple_go/
+
+node_modules/
+dist/
+build/
+
+# Rahasia: kredensial database, refresh token Google, JWT secret
+.env
+.env.*
+!.env.contoh
+*.pem
+*.key
+id_rsa*
+
+# Cadangan database
+*.sql.gz
+backup/
+
+*.log
+.DS_Store
+Thumbs.db
