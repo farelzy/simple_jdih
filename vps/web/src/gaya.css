@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/**
+ * Palet dari dokumen desain, dipakai apa adanya.
+ * Biru sebagai warna utama, latar terang, sudut membulat sedang, bayangan
+ * tipis. Tegas dan tenang -- ini situs pemerintahan, bukan aplikasi konsumen.
+ */
+@theme {
+  --color-biru-utama: #1B6FB8;
+  --color-biru-tua:   #0F4C81;
+  --color-biru-muda:  #E8F2FA;
+  --color-latar:      #F5F8FB;
+  --color-teks-utama: #1A2B3C;
+  --color-teks-lemah: #5A6B7C;
+  --color-garis:      #DCE5EC;
+
+  --color-proses:       #E8A317;
+  --color-selesai:      #2D9D5F;
+  --color-dikembalikan: #D64545;
+
+  /* Tumpukan huruf sistem, bukan Google Fonts: satu permintaan jaringan lebih
+     sedikit, dan teks langsung tampil tanpa kedipan. */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  background: var(--color-latar);
+  color: var(--color-teks-utama);
+  font-family: var(--font-sans);
+}
+
+/* Halaman tidak boleh bergeser mendatar di ponsel; tabel menggeser di dalam
+   wadahnya sendiri. */
+html, body { overflow-x: hidden; }

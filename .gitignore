@@ -20,3 +20,7 @@ backup/
 *.log
 .DS_Store
 Thumbs.db
+
+# Hasil build
+vps/server/dist/
+vps/web/dist/

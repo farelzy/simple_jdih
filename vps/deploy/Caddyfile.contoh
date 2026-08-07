@@ -1,0 +1,33 @@
+# Tambahkan blok ini ke /etc/caddy/Caddyfile.
+# Jangan sentuh blok jdih.marazystudio.my.id dan compbus.marazystudio.my.id
+# yang sudah ada -- keduanya melayani aplikasi lain yang sedang hidup.
+
+simple.jdih.marazystudio.my.id {
+	# Frontend: hasil `npm run build` di vps/web
+	root * /opt/simpel/web
+
+	# API diteruskan ke Express yang hanya mendengar di localhost
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3101
+	}
+
+	# React Router memakai path biasa, bukan hash. Tanpa fallback ini,
+	# membuka /detail/BRB-2026-0001 langsung dari alamat akan 404 karena
+	# tidak ada berkas dengan nama itu.
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	# Sengaja tanpa blok `log`: journald sudah menangkap seluruh keluaran Caddy
+	# (`journalctl -u caddy`), dan berkas log tersendiri hanya menambah satu hal
+	# yang harus dirotasi di disk yang dipakai bersama tiga aplikasi lain.
+}

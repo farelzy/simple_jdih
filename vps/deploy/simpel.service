@@ -1,0 +1,33 @@
+[Unit]
+Description=SIMPEL Hukum Brebes
+After=network.target mariadb.service
+Wants=mariadb.service
+
+[Service]
+Type=simple
+User=finnacantik
+WorkingDirectory=/opt/simpel/server
+EnvironmentFile=/opt/simpel/server/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+
+# VPS hanya punya 842 MB dan dibagi dengan semar, combis-queue, php-fpm,
+# mariadb, dan caddy. Tanpa batas ini, kebocoran memori SIMPEL bisa membuat
+# OOM killer memilih tetangganya sebagai korban -- dan yang mati justru
+# jdih.marazystudio.my.id yang tidak bersalah.
+MemoryMax=200M
+MemoryHigh=160M
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/simpel
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=simpel
+
+[Install]
+WantedBy=multi-user.target
