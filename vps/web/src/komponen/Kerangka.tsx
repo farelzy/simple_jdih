@@ -1,38 +1,33 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
-const tautanNav = ({ isActive }: { isActive: boolean }) =>
-  `rounded-[10px] px-3 py-1.5 text-sm ${
-    isActive
-      ? 'bg-biru-muda font-semibold text-biru-tua'
-      : 'text-teks-lemah hover:bg-biru-muda'
-  }`;
+const kelasNav = ({ isActive }: { isActive: boolean }) => (isActive ? 'aktif' : '');
 
 export function Kerangka() {
   return (
     <>
-      <header className="sticky top-0 z-20 border-b border-garis bg-white">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-4 py-2.5">
-          <Link to="/" className="flex items-baseline gap-1.5 text-biru-tua no-underline">
-            <span className="font-bold tracking-wide">SIMPEL</span>
-            <span className="text-xs text-teks-lemah">Hukum Brebes</span>
+      <header className="kepala">
+        <div className="wadah kepala-isi">
+          <Link to="/" className="merek">
+            <span className="merek-nama">SIMPEL</span>
+            <span className="merek-sub">Hukum Brebes</span>
           </Link>
-          <nav className="ml-auto flex gap-1">
-            <NavLink to="/" end className={tautanNav}>Monitoring</NavLink>
-            <NavLink to="/ajukan" className={tautanNav}>Ajukan</NavLink>
+          <nav className="nav">
+            <NavLink to="/" end className={kelasNav}>Monitoring</NavLink>
+            <NavLink to="/ajukan" className={kelasNav}>Ajukan</NavLink>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        <Outlet />
+      <main className="isi">
+        <div className="wadah">
+          <Outlet />
+        </div>
       </main>
 
-      <footer className="border-t border-garis bg-white py-5 text-sm">
-        <div className="mx-auto max-w-5xl px-4">
+      <footer className="kaki">
+        <div className="wadah kaki-isi">
           <p>Bagian Hukum Sekretariat Daerah Kabupaten Brebes</p>
-          <p className="text-xs text-teks-lemah">
-            Narahubung: Mayasari &middot; WA 0878 2799 2724
-          </p>
+          <p>Narahubung: Mayasari &middot; WA 0878 2799 2724</p>
         </div>
       </footer>
     </>

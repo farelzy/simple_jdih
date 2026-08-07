@@ -6,9 +6,9 @@ import { Detail } from './halaman/Detail';
 /** Sementara, sampai Tugas 10 selesai. */
 function SegeraHadir({ judul }: { judul: string }) {
   return (
-    <div className="rounded-[10px] border border-garis border-l-4 border-l-proses bg-white p-4">
-      <h2 className="mb-2 text-lg font-semibold">{judul}</h2>
-      <p className="text-sm">
+    <div className="kartu kartu-peringatan">
+      <h2>{judul}</h2>
+      <p>
         Bagian ini belum selesai dibangun. Untuk sementara, pengajuan masih lewat
         Google Form yang lama.
       </p>
