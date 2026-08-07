@@ -16,22 +16,22 @@ export interface Berkas {
   nama: string;
   ukuran: number;
   mime: string;
-  drive_file_id: string;
-  url: string;
+  sumber: 'lokal' | 'tautan';
+  jalur: string;
   diunggah_pada: string;
 }
 
 export type BerkasBaru = Omit<Berkas, 'id' | 'pengajuan_id' | 'diunggah_pada'>;
 
-const KOLOM = `id, pengajuan_id, kolom, nama, ukuran, mime, drive_file_id, url, diunggah_pada`;
+const KOLOM = `id, pengajuan_id, kolom, nama, ukuran, mime, sumber, jalur, diunggah_pada`;
 
 export async function berkasTambah(
   pengajuanId: number, b: BerkasBaru, conn?: PoolConnection
 ): Promise<void> {
   const sql = `INSERT INTO berkas
-                 (pengajuan_id, kolom, nama, ukuran, mime, drive_file_id, url, diunggah_pada)
+                 (pengajuan_id, kolom, nama, ukuran, mime, sumber, jalur, diunggah_pada)
                VALUES (?,?,?,?,?,?,?, NOW())`;
-  const nilai = [pengajuanId, b.kolom, b.nama, b.ukuran, b.mime, b.drive_file_id, b.url];
+  const nilai = [pengajuanId, b.kolom, b.nama, b.ukuran, b.mime, b.sumber, b.jalur];
   if (conn) await conn.query<ResultSetHeader>(sql, nilai);
   else await jalankan(sql, nilai);
 }

@@ -28,15 +28,20 @@ CREATE TABLE IF NOT EXISTS pengajuan (
   INDEX idx_dibuat (dibuat_pada)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Dua jenis berkas hidup berdampingan di sini:
+--   'lokal'   berkas yang diunggah ke disk VPS; `jalur` berisi nama berkasnya
+--   'tautan'  peninggalan spreadsheet lama; `jalur` berisi URL Drive penuh
+-- Migrasi tidak memindahkan berkas lama -- tautannya memang sudah bekerja, dan
+-- menyalin 29 pengajuan berisi berkas hanya menambah risiko tanpa manfaat.
 CREATE TABLE IF NOT EXISTS berkas (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   pengajuan_id  INT          NOT NULL,
   kolom         VARCHAR(40)  NOT NULL,
   nama          VARCHAR(512) NOT NULL,
-  ukuran        BIGINT       NOT NULL,
+  ukuran        BIGINT       NOT NULL DEFAULT 0,
   mime          VARCHAR(128) NOT NULL DEFAULT '',
-  drive_file_id VARCHAR(128) NOT NULL,
-  url           TEXT         NOT NULL,
+  sumber        ENUM('lokal','tautan') NOT NULL DEFAULT 'lokal',
+  jalur         VARCHAR(1024) NOT NULL,
   diunggah_pada DATETIME     NOT NULL,
   CONSTRAINT fk_berkas_pengajuan FOREIGN KEY (pengajuan_id) REFERENCES pengajuan(id) ON DELETE CASCADE,
   INDEX idx_berkas_pengajuan (pengajuan_id)

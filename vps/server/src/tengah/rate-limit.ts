@@ -16,8 +16,23 @@ interface Jendela {
   mulai: number;
 }
 
+/** Seluruh pembatas yang pernah dibuat, supaya uji bisa mengosongkannya. */
+const semuaCatatan: Map<string, Jendela>[] = [];
+
+/**
+ * Hanya untuk uji: kosongkan seluruh hitungan.
+ *
+ * Tanpa ini, berkas uji yang memanggil satu rute belasan kali dari IP yang sama
+ * akan kena batasnya sendiri dan gagal dengan 429 -- yang membingungkan, karena
+ * yang salah bukan kodenya melainkan uji tetangganya.
+ */
+export function _resetPembatas(): void {
+  for (const catatan of semuaCatatan) catatan.clear();
+}
+
 function buatPembatas(nama: string, maks: number, jendelaMs: number) {
   const catatan = new Map<string, Jendela>();
+  semuaCatatan.push(catatan);
 
   // Bersihkan jejak lama supaya peta tidak tumbuh selamanya.
   setInterval(() => {

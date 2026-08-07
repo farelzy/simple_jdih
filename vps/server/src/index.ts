@@ -11,6 +11,7 @@ import { bacaKonfig } from './konfig.js';
 import { siapkanSkema, pool } from './db.js';
 import { rutePublik } from './rute/publik.js';
 import { ruteAuth } from './rute/auth.js';
+import { ruteSetup, siapkanTokenPenyiapan } from './rute/setup.js';
 import { tangkapGalat } from './tengah/galat.js';
 
 export function buatApp() {
@@ -28,6 +29,7 @@ export function buatApp() {
   app.get('/api/sehat', (_req, res) => { res.json({ status: 'ok' }); });
   app.use('/api/publik', rutePublik);
   app.use('/api/auth', ruteAuth);
+  app.use('/api/setup', ruteSetup);
 
   app.use(tangkapGalat);
   return app;
@@ -36,6 +38,7 @@ export function buatApp() {
 if (process.env.NODE_ENV !== 'test') {
   const konfig = bacaKonfig(process.env);
   await siapkanSkema();
+  await siapkanTokenPenyiapan();
 
   const server = buatApp().listen(konfig.port, '127.0.0.1', () => {
     console.log(`SIMPEL siap di 127.0.0.1:${konfig.port}`);

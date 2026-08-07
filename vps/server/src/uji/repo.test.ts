@@ -129,7 +129,7 @@ describe('berkas', () => {
     const { id } = await pengajuanBuat(CONTOH);
     await berkasTambah(id, {
       kolom: 'surat_permohonan', nama: 'surat.pdf', ukuran: 2048,
-      mime: 'application/pdf', drive_file_id: 'drive-1', url: 'https://drive/1'
+      mime: 'application/pdf', sumber: 'lokal', jalur: 'surat-abc.pdf'
     });
     const daftar = await berkasUntuk(id);
     expect(daftar).toHaveLength(1);

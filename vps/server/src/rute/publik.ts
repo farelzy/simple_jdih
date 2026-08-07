@@ -91,7 +91,8 @@ rutePublik.get('/detail/:nomor', async (req, res, next) => {
 
     const berkas = bolehBerkas
       ? (await berkasUntuk(p.id)).map((b) => ({
-          kolom: b.kolom, nama: b.nama, ukuran: b.ukuran, url: b.url
+          kolom: b.kolom, nama: b.nama, ukuran: b.ukuran,
+          url: b.sumber === 'tautan' ? b.jalur : `/api/berkas/${b.id}`
         }))
       : [];
 
