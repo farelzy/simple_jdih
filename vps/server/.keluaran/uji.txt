@@ -1,0 +1,116 @@
+
+ RUN  v2.1.9 D:/farelzy/SIMPEL_JDIH_BB/vps/server
+
+ ✓ src/uji/admin.test.ts (20 tests) 34590ms
+   ✓ penjagaan > seluruh rute admin menolak permintaan tanpa sesi 622ms
+   ✓ GET /api/admin/data > mengirim antrean, rekap, pengaturan, dan daftar admin 2101ms
+   ✓ GET /api/admin/data > daftar admin tidak pernah memuat hash sandi 1327ms
+   ✓ GET /api/admin/data > antrean hanya memuat PROSES, terlama tidak bergerak di atas 2643ms
+   ✓ riwayat dan status > menambah riwayat lalu terlihat di halaman detail publik 2563ms
+   ✓ riwayat dan status > tahap di luar daftar baku ditolak 1594ms
+   ✓ riwayat dan status > DIKEMBALIKAN tanpa alasan ditolak 1562ms
+   ✓ riwayat dan status > DIKEMBALIKAN dengan alasan tersimpan dan terbaca publik 2194ms
+   ✓ kelola admin > menambah admin baru 1265ms
+   ✓ kelola admin > menolak sandi yang terlalu pendek 828ms
+   ✓ kelola admin > tidak bisa menghapus akun sendiri 1387ms
+   ✓ kelola admin > menghapus admin terakhir tertangkap penjagaan akun sendiri 1470ms
+   ✓ kelola admin > admin yang sudah dicabut langsung kehilangan akses meski cookienya masih ada 3103ms
+   ✓ kelola admin > ganti sandi menolak sandi lama yang salah 1081ms
+   ✓ kelola admin > ganti sandi membuat sandi lama tidak berlaku lagi 1758ms
+   ✓ pengaturan > batas ukuran di atas 30 MB ditolak 857ms
+   ✓ pengaturan > sakelar keterbukaan hanya menerima TRUE atau FALSE 830ms
+   ✓ pengaturan > mematikan sakelar WA langsung terasa di halaman publik 2359ms
+   ✓ OPD dan log > menambah OPD lalu muncul di konteks publik 1238ms
+   ✓ OPD dan log > log mencatat siapa mengubah apa 2276ms
+ ✓ src/uji/unggah.test.ts (21 tests) 18135ms
+   ✓ unggah berkas > Rancangan menolak PDF karena harus bisa disunting Bagian Hukum 342ms
+   ✓ unggah berkas > tidak meninggalkan berkas di disk saat unggahan kebesaran ditolak 383ms
+   ✓ unggah berkas > kolom satu berkas menolak berkas kedua 374ms
+   ✓ unggah berkas > BA PANSUS menerima sampai lima berkas 851ms
+   ✓ unggah berkas > berkas bisa dibatalkan sebelum dikirim 375ms
+   ✓ POST /api/pengajuan/kirim > menolak Perda tanpa SK Tim dan BA PANSUS 855ms
+   ✓ POST /api/pengajuan/kirim > menolak Perbup yang menyertakan SK Tim 888ms
+   ✓ POST /api/pengajuan/kirim > menolak nomor WhatsApp yang tidak sah 834ms
+   ✓ POST /api/pengajuan/kirim > honeypot dijawab seolah berhasil tapi tidak menyimpan apa pun 892ms
+   ✓ POST /api/pengajuan/kirim > pengajuan sah tersimpan lengkap dengan berkas dan riwayat pertama 2345ms
+   ✓ POST /api/pengajuan/kirim > draf tidak bisa dipakai dua kali 2118ms
+   ✓ POST /api/pengajuan/kirim > pengajuan baru langsung terlihat di monitoring publik 2364ms
+   ✓ GET /api/unggah/:id > menyajikan berkas dengan nama asli pemohon 2479ms
+ ✓ src/uji/murni/parser-riwayat.test.ts (18 tests) 25ms
+ ✓ src/uji/repo.test.ts (16 tests) 28790ms
+   ✓ penomoran pengajuan > nomor pertama tahun ini berakhiran 0001 740ms
+   ✓ penomoran pengajuan > nomor berikutnya berurut 1416ms
+   ✓ penomoran pengajuan > 20 pengiriman berbarengan menghasilkan 20 nomor berbeda dan berurut 13028ms
+   ✓ status dan riwayat > DIKEMBALIKAN tanpa alasan ditolak 826ms
+   ✓ status dan riwayat > DIKEMBALIKAN dengan alasan tersimpan ke keterangan 1017ms
+   ✓ status dan riwayat > status di luar daftar baku ditolak 827ms
+   ✓ status dan riwayat > mengubah status memperbarui jejak siapa dan kapan 1262ms
+   ✓ status dan riwayat > riwayat terurut menurut tanggal lalu urutan tulis 1508ms
+   ✓ status dan riwayat > tahap di luar daftar baku ditolak 861ms
+   ✓ status dan riwayat > tanggal riwayat harus berbentuk YYYY-MM-DD 775ms
+   ✓ status dan riwayat > riwayatTerakhirPerPengajuan mengambil kejadian paling akhir 1538ms
+   ✓ berkas > menyimpan dan membaca kembali berkas satu pengajuan 1567ms
+   ✓ opd > menambah dan mencocokkan OPD lewat kode maupun awalan nama 975ms
+   ✓ pengaturan > membaca seluruh pengaturan sebagai peta 409ms
+   ✓ pengaturan > menulis lalu membaca kembali nilai yang berubah 533ms
+ ✓ src/uji/murni/validasi.test.ts (18 tests) 12ms
+ ✓ src/uji/migrasi.test.ts (15 tests) 19868ms
+   ✓ migrasiJalankan > memberi nomor berurut menurut timestamp terlama, bukan urutan baris 2249ms
+   ✓ migrasiJalankan > memecah kolom 16 jadi baris riwayat terstruktur 1754ms
+   ✓ migrasiJalankan > perbandingan bolak-balik kolom 16 bersih 1461ms
+   ✓ migrasiJalankan > menyalin tautan berkas apa adanya sebagai sumber tautan 1771ms
+   ✓ migrasiJalankan > memetakan BPKAD KABUPATEN BREBES ke OPD BPKAD lewat awalan 1633ms
+   ✓ migrasiJalankan > OPD yang tidak dikenali dilaporkan, bukan ditebak diam-diam 1389ms
+   ✓ migrasiJalankan > mempertahankan status dan keterangan dari spreadsheet 1503ms
+   ✓ migrasiJalankan > mode uji-coba melaporkan tanpa menulis apa pun 704ms
+   ✓ migrasiJalankan > idempoten: dijalankan dua kali tidak menggandakan data 1967ms
+   ✓ migrasiJalankan > baris yang polanya tidak terbaca tetap masuk sebagai LAINNYA 1672ms
+   ✓ migrasiJalankan > kegagalan di tengah tidak meninggalkan data separuh jalan 1736ms
+stderr | src/uji/setup.test.ts > POST /api/setup/admin > menolak sandi yang terlalu pendek
+[galat] Kata sandi minimal 8 karakter.
+
+ ✓ src/uji/setup.test.ts (12 tests) 12906ms
+   ✓ GET /api/setup/status > melaporkan perlu setup saat belum ada admin 454ms
+   ✓ POST /api/setup/admin > menolak tanpa token 647ms
+   ✓ POST /api/setup/admin > menolak token yang salah 643ms
+   ✓ POST /api/setup/admin > membuat admin pertama dengan token yang benar dan langsung memasang sesi 1003ms
+   ✓ POST /api/setup/admin > menolak sandi yang terlalu pendek 572ms
+   ✓ POST /api/setup/admin > token hangus setelah dipakai sekali 1113ms
+   ✓ POST /api/setup/admin > tidak menerbitkan token bila sistem sudah punya admin 888ms
+   ✓ POST /api/setup/admin > status berubah jadi tidak perlu setup setelah admin ada 909ms
+   ✓ migrasi lewat penyiapan > menolak periksa dan migrasi tanpa sesi admin 333ms
+   ✓ migrasi lewat penyiapan > memeriksa CSV dan melaporkan jumlah barisnya 910ms
+   ✓ migrasi lewat penyiapan > mode uji-coba melaporkan tanpa menulis 1816ms
+   ✓ migrasi lewat penyiapan > migrasi sungguhan menyimpan pengajuan beserta riwayatnya 2006ms
+ ✓ src/uji/publik.test.ts (12 tests) 6821ms
+   ✓ GET /api/publik/monitoring > mengembalikan hitungan dan daftar tanpa perlu masuk 320ms
+   ✓ GET /api/publik/monitoring > menampilkan nomor WA lengkap saat sakelar menyala 341ms
+   ✓ GET /api/publik/monitoring > menyamarkan nomor WA saat sakelar dimatikan 535ms
+   ✓ GET /api/publik/monitoring > tidak pernah mengirim email pemohon ke publik 301ms
+   ✓ GET /api/publik/detail/:nomor > mengembalikan pengajuan beserta riwayatnya 661ms
+   ✓ GET /api/publik/detail/:nomor > menyembunyikan berkas saat sakelar dimatikan 1015ms
+   ✓ GET /api/publik/detail/:nomor > tidak pernah mengirim email pemohon di halaman detail 431ms
+ ✓ src/uji/murni/rekap.test.ts (14 tests) 20ms
+ ✓ src/uji/murni/skema.test.ts (10 tests) 9ms
+ ✓ src/uji/db.test.ts (8 tests) 4746ms
+   ✓ lapisan database > siapkanSkema membuat seluruh tabel dan aman diulang 926ms
+   ✓ lapisan database > transaksi melakukan rollback saat callback melempar 549ms
+   ✓ lapisan database > transaksi melakukan commit saat callback selesai 606ms
+   ✓ lapisan database > constraint UNIQUE menolak nomor pengajuan kembar 414ms
+   ✓ lapisan database > menghapus pengajuan ikut menghapus berkas dan riwayatnya 635ms
+ ✓ src/uji/auth.test.ts (13 tests) 4432ms
+   ✓ repo admin > menyimpan sandi sebagai hash, tidak pernah apa adanya 411ms
+   ✓ repo admin > email disimpan huruf kecil supaya pencarian tidak meleset 400ms
+   ✓ repo admin > adminPeriksaSandi menerima sandi benar dan menolak yang salah 329ms
+   ✓ repo admin > ganti sandi membuat sandi lama tidak berlaku lagi 630ms
+   ✓ repo admin > menonaktifkan admin mengeluarkannya dari hitungan aktif dan dari login 593ms
+ ✓ src/uji/simpanan.test.ts (9 tests) 56ms
+ ✓ src/uji/murni/csv.test.ts (13 tests) 8ms
+ ✓ src/uji/murni/penomoran.test.ts (8 tests) 19ms
+ ✓ src/uji/konfig.test.ts (6 tests) 7ms
+
+ Test Files  16 passed (16)
+      Tests  213 passed (213)
+   Start at  22:04:23
+   Duration  143.30s (transform 495ms, setup 0ms, collect 5.89s, tests 130.44s, environment 4ms, prepare 3.19s)
+

@@ -13,6 +13,8 @@ import { rutePublik } from './rute/publik.js';
 import { ruteAuth } from './rute/auth.js';
 import { ruteSetup, siapkanTokenPenyiapan } from './rute/setup.js';
 import { ruteAdmin } from './rute/admin.js';
+import { ruteUnggah } from './rute/unggah.js';
+import { rutePengajuan } from './rute/pengajuan.js';
 import { tangkapGalat } from './tengah/galat.js';
 
 export function buatApp() {
@@ -32,6 +34,8 @@ export function buatApp() {
   app.use('/api/auth', ruteAuth);
   app.use('/api/setup', ruteSetup);
   app.use('/api/admin', ruteAdmin);
+  app.use('/api/unggah', ruteUnggah);
+  app.use('/api/pengajuan', rutePengajuan);
 
   app.use(tangkapGalat);
   return app;
