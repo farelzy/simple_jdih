@@ -12,6 +12,7 @@ import { siapkanSkema, pool } from './db.js';
 import { rutePublik } from './rute/publik.js';
 import { ruteAuth } from './rute/auth.js';
 import { ruteSetup, siapkanTokenPenyiapan } from './rute/setup.js';
+import { ruteAdmin } from './rute/admin.js';
 import { tangkapGalat } from './tengah/galat.js';
 
 export function buatApp() {
@@ -30,6 +31,7 @@ export function buatApp() {
   app.use('/api/publik', rutePublik);
   app.use('/api/auth', ruteAuth);
   app.use('/api/setup', ruteSetup);
+  app.use('/api/admin', ruteAdmin);
 
   app.use(tangkapGalat);
   return app;

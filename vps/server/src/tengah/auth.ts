@@ -55,13 +55,35 @@ export function bacaSesi(req: Request): Sesi | null {
   return token ? periksaToken(token) : null;
 }
 
-/** Middleware: hentikan permintaan yang bukan dari admin. */
-export function wajibAdmin(req: Request, res: Response, next: NextFunction): void {
+/**
+ * Middleware: hentikan permintaan yang bukan dari admin aktif.
+ *
+ * Token yang sah saja tidak cukup. Token berumur 12 jam, jadi admin yang baru
+ * dicabut aksesnya akan tetap bisa bertindak selama sisa umur token itu kalau
+ * yang diperiksa hanya tanda tangannya. Karena itu keaktifannya dicek ke
+ * database tiap permintaan -- pada segelintir akun dan lalu lintas sekecil ini,
+ * satu kueri tambahan jauh lebih murah daripada lubang selama 12 jam.
+ */
+export async function wajibAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const sesi = bacaSesi(req);
   if (!sesi) {
     res.status(401).json({ galat: 'Halaman ini hanya untuk Bagian Hukum.' });
     return;
   }
+
+  try {
+    const { adminCari } = await import('../repo/admin.js');
+    const admin = await adminCari(sesi.email);   // hanya mengembalikan yang aktif
+    if (!admin || admin.id !== sesi.id) {
+      hapusCookie(res);
+      res.status(401).json({ galat: 'Akses Anda sudah dicabut. Silakan masuk kembali.' });
+      return;
+    }
+  } catch (galat) {
+    next(galat);
+    return;
+  }
+
   (req as Request & { sesi?: Sesi }).sesi = sesi;
   next();
 }
