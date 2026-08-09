@@ -26,4 +26,4 @@ vps/server/dist/
 vps/web/dist/
 
 # Keluaran sementara pemeriksaan
-vps/.keluaran/
+.keluaran/
