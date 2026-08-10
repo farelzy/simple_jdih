@@ -323,6 +323,8 @@ export function Pengajuan() {
                     + 'Hubungi Bagian Hukum Setda Kabupaten Brebes.'
                   : 'Kode ini diberikan Bagian Hukum Setda Kabupaten Brebes. Belum punya kode, '
                     + 'atau OPD Anda belum terdaftar? Hubungi Bagian Hukum lebih dulu.'}
+                {' '}
+                <Link to="/panduan">Baca panduan</Link>
               </p>
 
               <div className="tombol-baris">

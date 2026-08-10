@@ -140,10 +140,20 @@ describe('kelola admin', () => {
     expect(await adminHitungAktif()).toBe(2);
   });
 
-  it('menolak sandi yang terlalu pendek', async () => {
+  /**
+   * Sandi pendek adalah salah pakai, bukan kerusakan server.
+   *
+   * Uji ini dulu mengharapkan 500 -- mengunci perilaku yang keliru: pesan
+   * "Kata sandi minimal 8 karakter" tertelan tangkapGalat dan di produksi
+   * berubah jadi "Terjadi kesalahan di server", sehingga admin tidak pernah
+   * tahu apa yang salah.
+   */
+  it('menolak sandi yang terlalu pendek dengan alasan yang terbaca', async () => {
     const agen = await masuk();
-    await agen.post('/api/admin/admin')
-      .send({ email: 'x@uji.local', nama: 'X', sandi: 'pendek' }).expect(500);
+    const r = await agen.post('/api/admin/admin')
+      .send({ email: 'x@uji.local', nama: 'X', sandi: 'pendek' }).expect(400);
+    expect(r.body.galat).toMatch(/8 karakter/);
+    expect(r.body.galat).not.toMatch(/kesalahan di server/i);
   });
 
   /**
@@ -253,6 +263,32 @@ describe('OPD dan log', () => {
     const r = await request(app).get('/api/publik/konteks').expect(200);
     expect(r.body.opd.some((o: { nama_resmi: string }) => o.nama_resmi === 'Dinas Pekerjaan Umum'))
       .toBe(true);
+  });
+
+  it('kode OPD kembar ditolak dengan pesan yang jelas, bukan 500 buta', async () => {
+    const agen = await masuk();
+    await agen.post('/api/admin/opd')
+      .send({ kode: 'UJIBENTROK', nama_resmi: 'Dinas Pertama', nama_singkat: 'DP' })
+      .expect(200);
+
+    const r = await agen.post('/api/admin/opd')
+      .send({ kode: 'UJIBENTROK', nama_resmi: 'Dinas Kedua', nama_singkat: 'DK' })
+      .expect(409);
+    expect(r.body.galat).toMatch(/Dinas Pertama/);
+    expect(r.body.galat).not.toMatch(/kesalahan di server/i);
+  });
+
+  it('email admin kembar ditolak dengan pesan yang jelas, bukan 500 buta', async () => {
+    const agen = await masuk();
+    await agen.post('/api/admin/admin')
+      .send({ email: 'dobel@uji.local', nama: 'Pertama', sandi: 'sandi-rahasia-123' })
+      .expect(200);
+
+    const r = await agen.post('/api/admin/admin')
+      .send({ email: 'dobel@uji.local', nama: 'Kedua', sandi: 'sandi-rahasia-456' })
+      .expect(409);
+    expect(r.body.galat).toMatch(/dobel@uji\.local/);
+    expect(r.body.galat).not.toMatch(/kesalahan di server/i);
   });
 
   /**

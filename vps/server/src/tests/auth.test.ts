@@ -16,6 +16,50 @@ afterAll(async () => {
   await pool.end();
 });
 
+/**
+ * Penolakan yang sebenarnya salah pakai harus sampai ke pemakai apa adanya.
+ *
+ * Sebelum ini semuanya dilempar sebagai Error biasa, dan tangkapGalat
+ * memperlakukannya sebagai kerusakan internal: di produksi pesannya diganti
+ * "Terjadi kesalahan di server. Coba lagi beberapa saat." -- persis saat pesan
+ * aslinya paling dibutuhkan.
+ */
+describe('adminBuat menolak dengan pesan yang bisa dibaca', () => {
+  it('email kembar ditolak, menyebut emailnya', async () => {
+    await adminBuat('kembar@uji.local', 'Admin Kembar', 'sandi-rahasia-123');
+    await expect(adminBuat('kembar@uji.local', 'Lain', 'sandi-rahasia-456'))
+      .rejects.toMatchObject({ name: 'GalatKlien', kode: 409 });
+    await expect(adminBuat('kembar@uji.local', 'Lain', 'sandi-rahasia-456'))
+      .rejects.toThrow(/kembar@uji\.local/);
+  });
+
+  it('email tidak sah dan sandi pendek ditolak sebagai GalatKlien', async () => {
+    await expect(adminBuat('bukan-email', 'X', 'sandi-rahasia-123'))
+      .rejects.toMatchObject({ name: 'GalatKlien' });
+    await expect(adminBuat('pendek@uji.local', 'X', 'abc'))
+      .rejects.toMatchObject({ name: 'GalatKlien' });
+  });
+
+  /**
+   * Kolom email UNIQUE, sementara adminDaftar hanya menampilkan yang aktif.
+   * Tanpa penghidupan kembali, email bekas admin yang dinonaktifkan terkunci
+   * selamanya dan alasannya tidak terlihat di mana pun.
+   */
+  it('email bekas admin nonaktif bisa dipakai lagi, dengan sandi baru', async () => {
+    const id = await adminBuat('bangkit@uji.local', 'Versi Lama', 'sandi-rahasia-123');
+    await adminNonaktifkan(id);
+    expect(await adminCari('bangkit@uji.local')).toBeNull();
+
+    const idBaru = await adminBuat('bangkit@uji.local', 'Versi Baru', 'sandi-rahasia-456');
+    expect(idBaru).toBe(id);
+
+    const a = await adminCari('bangkit@uji.local');
+    expect(a?.nama).toBe('Versi Baru');
+    expect(await adminPeriksaSandi('bangkit@uji.local', 'sandi-rahasia-456')).not.toBeNull();
+    expect(await adminPeriksaSandi('bangkit@uji.local', 'sandi-rahasia-123')).toBeNull();
+  });
+});
+
 describe('repo admin', () => {
   it('menyimpan sandi sebagai hash, tidak pernah apa adanya', async () => {
     await adminBuat('a@uji.local', 'Admin A', 'sandi-rahasia-123');

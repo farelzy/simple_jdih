@@ -7,6 +7,7 @@ import { Setup } from './pages/Setup';
 import { Masuk } from './pages/Masuk';
 import { Admin } from './pages/Admin';
 import { Pengajuan } from './pages/Pengajuan';
+import { Panduan } from './pages/Panduan';
 import { panggilApi } from './lib/api';
 
 /** Sementara, sampai halaman terkait selesai dibangun. */
@@ -49,6 +50,7 @@ export function App() {
           <Route index element={<Pengalih anak={<Monitoring />} />} />
           <Route path="detail/:nomor" element={<Detail />} />
           <Route path="ajukan" element={<Pengajuan />} />
+          <Route path="panduan" element={<Panduan />} />
           <Route path="admin" element={<Admin />} />
           <Route path="masuk" element={<Masuk />} />
           <Route path="setup" element={<Setup />} />

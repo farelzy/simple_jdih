@@ -13,6 +13,10 @@
 
 import { kueri, satu, jalankan } from '../db.js';
 import { normalisasiHeader } from '../pure/skema.js';
+// Lihat catatan yang sama di repo/admin.ts: tanpa GalatKlien, penolakan yang
+// sebenarnya salah pakai muncul ke pemakai sebagai "Terjadi kesalahan di
+// server" dan pesannya hilang.
+import { GalatKlien } from '../middleware/galat.js';
 
 export interface Opd {
   id: number;
@@ -55,10 +59,34 @@ export async function opdCariKode(kode: unknown): Promise<Opd | null> {
   );
 }
 
+/**
+ * Tambah OPD baru.
+ *
+ * Kode yang sudah dipakai OPD NONAKTIF dihidupkan kembali, sama alasannya
+ * dengan adminBuat: kolomnya UNIQUE sementara daftar hanya menampilkan yang
+ * aktif, jadi tanpa ini kode bekas OPD yang dinonaktifkan tidak akan pernah
+ * bisa dipakai lagi dan alasannya tidak terlihat di mana pun.
+ */
 export async function opdTambah(kode: string, namaResmi: string, namaSingkat = ''): Promise<number> {
   const k = normalisasiKode(kode);
   const n = String(namaResmi ?? '').trim();
-  if (!k || !n) throw new Error('Kode OPD dan nama resmi wajib diisi.');
+  if (!k || !n) throw new GalatKlien('Kode OPD dan nama resmi wajib diisi.');
+  if (k.length > 32) throw new GalatKlien('Kode OPD paling panjang 32 karakter.');
+
+  const ada = await satu<{ id: number; aktif: number; nama_resmi: string }>(
+    `SELECT id, aktif, nama_resmi FROM opd WHERE kode = ?`, [k]
+  );
+  if (ada && Number(ada.aktif) === 1) {
+    throw new GalatKlien(`Kode ${k} sudah dipakai OPD "${ada.nama_resmi}".`, 409);
+  }
+  if (ada) {
+    await jalankan(
+      `UPDATE opd SET nama_resmi = ?, nama_singkat = ?, aktif = 1 WHERE id = ?`,
+      [n, String(namaSingkat ?? '').trim(), ada.id]
+    );
+    return ada.id;
+  }
+
   const hasil = await jalankan(
     `INSERT INTO opd (kode, nama_resmi, nama_singkat, aktif) VALUES (?,?,?,1)`,
     [k, n, String(namaSingkat ?? '').trim()]
@@ -74,10 +102,16 @@ export async function opdTambah(kode: string, namaResmi: string, namaSingkat = '
  */
 export async function opdUbahKode(id: number, kode: string): Promise<void> {
   const k = normalisasiKode(kode);
-  if (!k) throw new Error('Kode OPD tidak boleh kosong.');
-  if (k.length > 32) throw new Error('Kode OPD paling panjang 32 karakter.');
+  if (!k) throw new GalatKlien('Kode OPD tidak boleh kosong.');
+  if (k.length > 32) throw new GalatKlien('Kode OPD paling panjang 32 karakter.');
+
+  const bentrok = await satu<{ nama_resmi: string }>(
+    `SELECT nama_resmi FROM opd WHERE kode = ? AND id <> ?`, [k, Number(id)]
+  );
+  if (bentrok) throw new GalatKlien(`Kode ${k} sudah dipakai OPD "${bentrok.nama_resmi}".`, 409);
+
   const hasil = await jalankan(`UPDATE opd SET kode = ? WHERE id = ?`, [k, Number(id)]);
-  if (hasil.affectedRows === 0) throw new Error('OPD tidak ditemukan.');
+  if (hasil.affectedRows === 0) throw new GalatKlien('OPD tidak ditemukan.', 404);
 }
 
 export async function opdNonaktifkan(id: number): Promise<void> {

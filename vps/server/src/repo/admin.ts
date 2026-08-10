@@ -8,6 +8,10 @@
 
 import bcrypt from 'bcryptjs';
 import { kueri, satu, jalankan } from '../db.js';
+// Penolakan di sini adalah salah pakai, bukan kerusakan. Tanpa GalatKlien,
+// tangkapGalat menganggapnya galat internal dan menggantinya dengan "Terjadi
+// kesalahan di server" -- pesannya hilang justru saat paling dibutuhkan.
+import { GalatKlien } from '../middleware/galat.js';
 
 export interface Admin {
   id: number;
@@ -36,13 +40,45 @@ export async function adminCari(email: string): Promise<Admin | null> {
   );
 }
 
+/**
+ * Buat akun admin.
+ *
+ * Email yang sudah dipakai admin AKTIF ditolak dengan pesan yang jelas. Yang
+ * dipakai admin NONAKTIF dihidupkan kembali berikut nama dan sandi baru:
+ * kolom email UNIQUE, sementara adminDaftar hanya menampilkan yang aktif, jadi
+ * tanpa ini email bekas admin yang dinonaktifkan tidak akan pernah bisa
+ * dipakai lagi -- dan alasannya tidak terlihat di mana pun.
+ *
+ * @returns id baris admin, baik yang baru dibuat maupun yang dihidupkan lagi
+ */
 export async function adminBuat(email: string, nama: string, sandi: string): Promise<number> {
   const bersih = bakukanEmail(email);
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(bersih)) throw new Error('Alamat email tidak sah.');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(bersih)) throw new GalatKlien('Alamat email tidak sah.');
   if (String(sandi ?? '').length < PANJANG_SANDI_MIN) {
-    throw new Error(`Kata sandi minimal ${PANJANG_SANDI_MIN} karakter.`);
+    throw new GalatKlien(`Kata sandi minimal ${PANJANG_SANDI_MIN} karakter.`);
   }
+
+  const ada = await satu<{ id: number; aktif: number }>(
+    `SELECT id, aktif FROM admin WHERE email = ?`, [bersih]
+  );
+  if (ada && Number(ada.aktif) === 1) {
+    throw new GalatKlien(
+      `Email ${bersih} sudah dipakai admin lain. `
+      + 'Pakai email berbeda, atau nonaktifkan dulu akun yang lama.',
+      409
+    );
+  }
+
   const hash = await bcrypt.hash(sandi, PUTARAN);
+
+  if (ada) {
+    await jalankan(
+      `UPDATE admin SET nama = ?, password_hash = ?, aktif = 1, dibuat_pada = NOW() WHERE id = ?`,
+      [nama ?? '', hash, ada.id]
+    );
+    return ada.id;
+  }
+
   const hasil = await jalankan(
     `INSERT INTO admin (email, nama, password_hash, aktif, dibuat_pada)
      VALUES (?, ?, ?, 1, NOW())`,
@@ -65,7 +101,7 @@ export async function adminNonaktifkan(id: number): Promise<void> {
 
 export async function adminGantiSandi(id: number, sandiBaru: string): Promise<void> {
   if (String(sandiBaru ?? '').length < PANJANG_SANDI_MIN) {
-    throw new Error(`Kata sandi minimal ${PANJANG_SANDI_MIN} karakter.`);
+    throw new GalatKlien(`Kata sandi minimal ${PANJANG_SANDI_MIN} karakter.`);
   }
   await jalankan(`UPDATE admin SET password_hash = ? WHERE id = ?`,
     [await bcrypt.hash(sandiBaru, PUTARAN), id]);

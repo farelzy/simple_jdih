@@ -144,6 +144,34 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
 }
 .judul-bagian { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
 
+/**
+ * Daftar langkah bernomor pada halaman panduan.
+ *
+ * Nomornya digambar sendiri lewat counter, bukan penanda daftar bawaan: yang
+ * bawaan tidak bisa diberi lingkaran dan garis penghubung antar langkah.
+ */
+.panduan { list-style: none; counter-reset: langkah; padding: 0; margin: 0 0 8px; }
+.panduan li {
+  counter-increment: langkah;
+  position: relative;
+  padding: 0 0 22px 46px;
+  border-left: 2px solid var(--garis);
+  margin-left: 15px;
+}
+.panduan li:last-child { border-left-color: transparent; padding-bottom: 4px; }
+.panduan li:before {
+  content: counter(langkah);
+  position: absolute; left: -16px; top: -2px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--biru-utama), var(--biru-tua));
+  color: var(--putih); font-size: 14px; font-weight: 700;
+  box-shadow: var(--bayang-biru);
+}
+.panduan h3 { margin: 4px 0 6px; font-size: 15px; }
+.panduan p { margin: 0; }
+
 /* Kartu */
 .kartu {
   background: var(--putih); border: 1px solid var(--garis);
@@ -431,8 +459,9 @@ tbody tr:hover { background: var(--biru-muda); }
   .kepala-isi { gap: 8px; min-height: 52px; flex-wrap: nowrap; }
   .merek-nama { font-size: 16px; letter-spacing: .5px; }
   .merek-sub { display: none; }        /* sudah disebut lengkap di sambutan */
-  .nav { margin-left: auto; gap: 2px; }
-  .nav a { padding: 6px 12px; font-size: 13px; }
+  /* Tiga tautan plus merek harus muat di 320px tanpa membungkus. */
+  .nav { margin-left: auto; gap: 0; }
+  .nav a { padding: 6px 8px; font-size: 12.5px; }
 
   .sambutan { margin-bottom: 18px; }
   .sambutan h1 { font-size: 20px; }

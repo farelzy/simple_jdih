@@ -14,6 +14,7 @@ export function Kerangka() {
           <nav className="nav">
             <NavLink to="/" end className={kelasNav}>Monitoring</NavLink>
             <NavLink to="/ajukan" className={kelasNav}>Ajukan</NavLink>
+            <NavLink to="/panduan" className={kelasNav}>Panduan</NavLink>
           </nav>
         </div>
       </header>

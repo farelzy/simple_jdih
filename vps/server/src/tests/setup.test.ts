@@ -56,11 +56,17 @@ describe('POST /api/setup/admin', () => {
     expect(await adminHitungAktif()).toBe(1);
   });
 
-  it('menolak sandi yang terlalu pendek', async () => {
+  /**
+   * Dulu mengharapkan 500. Di wizard penyiapan itu paling menyakitkan: orang
+   * yang baru memasang sistem membaca "Terjadi kesalahan di server" dan wajar
+   * menyimpulkan pemasangannya gagal, padahal sandinya saja yang kependekan.
+   */
+  it('menolak sandi yang terlalu pendek dengan alasan yang terbaca', async () => {
     const r = await request(app).post('/api/setup/admin')
-      .send({ ...ADMIN, sandi: 'pendek', token: _tokenSaatIni() }).expect(500);
+      .send({ ...ADMIN, sandi: 'pendek', token: _tokenSaatIni() }).expect(400);
     expect(await adminHitungAktif()).toBe(0);
-    expect(r.body.galat).toBeDefined();
+    expect(r.body.galat).toMatch(/8 karakter/);
+    expect(r.body.galat).not.toMatch(/kesalahan di server/i);
   });
 
   /**
