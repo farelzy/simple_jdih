@@ -8,7 +8,7 @@
 
 import type { PoolConnection, ResultSetHeader } from 'mysql2/promise';
 import { kueri, jalankan } from '../db.js';
-import { TAHAP_RIWAYAT } from '../murni/skema.js';
+import { TAHAP_RIWAYAT } from '../pure/skema.js';
 import { pengajuanSentuh } from './pengajuan.js';
 
 export interface Riwayat {

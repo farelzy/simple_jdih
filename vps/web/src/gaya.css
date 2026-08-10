@@ -179,6 +179,25 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
 .saringan input[type="search"] { flex: 1 1 240px; }
 .saringan select { flex: 0 1 auto; width: auto; min-width: 140px; }
 
+/**
+ * Tab dashboard menempel tepat di bawah navbar.
+ *
+ * Tab-nya dipakai terus-menerus sambil menelusuri antrean yang panjang; kalau
+ * ikut tergulir, pindah tab berarti menggulir balik ke atas dulu.
+ *
+ * Margin negatif membuatnya membentang sampai tepi .wadah. Tanpa itu, kartu
+ * yang lewat di belakangnya menyembul di kiri dan kanan tab.
+ */
+.tab-bar {
+  position: sticky;
+  top: 64px;                /* setinggi .kepala */
+  z-index: 15;              /* di bawah .kepala (20), di atas kartu */
+  margin: 0 -20px 20px;
+  padding: 12px 20px;
+  background: var(--latar);
+  border-bottom: 1px solid var(--garis);
+}
+
 input, select, textarea {
   width: 100%; padding: 10px 14px; font: inherit; color: inherit;
   background: var(--putih); border: 1.5px solid var(--garis);
@@ -191,6 +210,27 @@ input:focus, select:focus, textarea:focus {
 }
 label { display: block; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
 label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
+
+/**
+ * Kolom kata sandi dengan tombol lihat.
+ *
+ * Bantalan kanan kotak isian dilebarkan supaya teks yang panjang berhenti
+ * sebelum tombol, bukan lewat di bawahnya.
+ */
+.kolom-sandi { position: relative; display: block; margin-top: 6px; }
+/* Jarak atas pindah ke pembungkus, supaya `top: 50%` tombol mengukur tinggi
+   kotak isian saja dan ikonnya benar-benar di tengah. */
+.kolom-sandi input { padding-right: 44px; margin-top: 0; display: block; }
+.sandi-lihat {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0;
+  border: none; border-radius: 8px;
+  background: none; color: var(--teks-lemah); cursor: pointer;
+  transition: var(--transisi);
+}
+.sandi-lihat:hover { background: var(--biru-muda); color: var(--biru-utama); }
+.sandi-lihat:focus-visible { outline: 2px solid var(--biru-utama); outline-offset: -2px; }
 
 /* Tombol */
 .tombol {
@@ -316,6 +356,22 @@ label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
 
 /* Tabel */
 .tabel-bungkus { overflow-x: auto; border-radius: var(--sudut); }
+
+/**
+ * Tabel yang isinya boleh membungkus.
+ *
+ * `th, td { white-space: nowrap }` cocok untuk tabel rekap yang angkanya
+ * pendek, tapi menyakitkan untuk daftar OPD: satu nama sepanjang "Badan
+ * Perencanaan Pembangunan, Riset dan Inovasi Daerah" mendorong kolom tombol
+ * keluar layar, jadi tombolnya baru terlihat setelah tabel digeser.
+ *
+ * Kolom terakhir tetap nowrap dan selebar isinya (`width: 1%` membuat tabel
+ * menyusutkannya sampai sesempit mungkin), supaya tombol tidak pernah patah
+ * di tengah dan sisa ruang jatuh ke kolom teks.
+ */
+.tabel-lentur th, .tabel-lentur td { white-space: normal; }
+.tabel-lentur td:last-child { white-space: nowrap; width: 1%; text-align: right; }
+.tabel-lentur td:last-child .tombol { padding: 8px 12px; font-size: 13px; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
 th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--garis); white-space: nowrap; }
 th {
@@ -345,20 +401,69 @@ tbody tr:hover { background: var(--biru-muda); }
 .kaki p { margin: 0 0 4px; }
 .kaki-isi { text-align: center; }
 
+/**
+ * Ponsel.
+ *
+ * Yang dikejar di sini satu hal: pengunjung harus melihat pengajuan pertama
+ * tanpa menggulir. Versi sebelumnya menumpuk sambutan, empat kotak hitungan
+ * berbantalan tebal, lalu empat baris saringan selebar layar -- hampir satu
+ * layar penuh terpakai sebelum ada isi yang terlihat.
+ */
 @media (max-width: 640px) {
   h1 { font-size: 22px; }
-  .hitungan { grid-template-columns: repeat(2, 1fr); }
-  .kepala-isi { gap: 10px; min-height: 56px; }
-  .merek-nama { font-size: 17px; }
-  .nav { width: 100%; margin-left: 0; order: 3; justify-content: center; }
-  .nav a { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
-  .baris-atas { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .wadah { padding: 0 14px; }
+  .isi { padding: 16px 0 40px; }
+
+  /* Navigasi tetap sebaris dengan merek. Satu baris penuh untuk dua tautan
+     memakan tinggi yang lebih berguna untuk isi. */
+  .kepala-isi { gap: 8px; min-height: 52px; flex-wrap: nowrap; }
+  .merek-nama { font-size: 16px; letter-spacing: .5px; }
+  .merek-sub { display: none; }        /* sudah disebut lengkap di sambutan */
+  .nav { margin-left: auto; gap: 2px; }
+  .nav a { padding: 6px 12px; font-size: 13px; }
+
+  .sambutan { margin-bottom: 18px; }
+  .sambutan h1 { font-size: 20px; }
+  .sambutan p { font-size: 12.5px; line-height: 1.55; }
+  .judul-bagian { font-size: 15px; margin-bottom: 10px; }
+
+  /* Empat kotak jadi satu baris. Susunan 2x2 berbantalan 20px mendorong daftar
+     pengajuan turun hampir satu layar penuh. */
+  .hitungan { grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 16px; }
+  .hitungan-kotak { padding: 10px 3px; border-radius: 12px; }
+  .hitungan-angka { font-size: 20px; letter-spacing: -.5px; }
+  .hitungan-label { font-size: 9px; letter-spacing: .2px; margin-top: 2px; }
+
+  /* Tiga saringan berbagi satu baris, bukan tiga baris penuh. */
+  .saringan { gap: 7px; margin-bottom: 14px; }
+  .saringan input[type="search"] { flex: 1 1 100%; }
+  .saringan select {
+    flex: 1 1 calc(33.333% - 5px);
+    width: auto; min-width: 0;
+    font-size: 12.5px; padding: 8px 6px;
+  }
+
+  .kartu { padding: 14px; border-radius: 12px; margin-bottom: 12px; }
+  .judul-pengajuan { font-size: 14px; }
+  .baris-atas { flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .meta, .terakhir { font-size: 12.5px; }
+
   .tombol-baris { flex-direction: column-reverse; }
   .tombol-baris .tombol { width: 100%; }
-  .saringan select { flex: 1 1 100%; width: 100%; }
   .pilihan-jenis { grid-template-columns: 1fr; }
-  .isi { padding: 20px 0 48px; }
-  .wadah { padding: 0 16px; }
+  .linimasa li { padding: 0 0 18px 24px; }
+
+  /* Tab dashboard menggeser mendatar daripada menumpuk jadi tujuh baris.
+     Sengaja kelas tersendiri: .saringan di monitoring justru HARUS membungkus
+     supaya pencarian dapat satu baris penuh dan tiga penyaring berbagi baris
+     di bawahnya. */
+  .tab-bar {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    top: 52px;                     /* .kepala lebih pendek di ponsel */
+    margin: 0 -14px 16px; padding: 10px 14px;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar > .tombol { flex: 0 0 auto; }
 }
 
 /* Hormati pengguna yang mematikan animasi di sistemnya. */
@@ -368,10 +473,4 @@ tbody tr:hover { background: var(--biru-muda); }
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
-}
-
-@media (max-width: 640px) {
-  .sambutan h1 { font-size: 22px; }
-  .sambutan p { font-size: 13px; }
-  .sambutan { margin-bottom: 20px; }
 }

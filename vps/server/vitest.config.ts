@@ -24,7 +24,7 @@ function muatEnvUji(): Record<string, string> {
 export default defineConfig({
   test: {
     env: muatEnvUji(),
-    include: ['src/uji/**/*.test.ts'],
+    include: ['src/tests/**/*.test.ts'],
     // Uji database berbagi satu skema; menjalankannya berbarengan membuat
     // pembersihan tabel satu berkas menghapus data berkas lain.
     fileParallelism: false,

@@ -9,9 +9,18 @@ export async function panggilApi<T>(jalur: string, opsi: RequestInit = {}): Prom
     ...opsi
   });
 
-  const isi = (await jawab.json().catch(() => ({}))) as { galat?: string };
+  const isi = (await jawab.json().catch(() => ({}))) as { galat?: unknown };
   if (!jawab.ok) {
-    throw new Error(isi.galat ?? `Gagal menghubungi server (HTTP ${jawab.status}).`);
+    const g = isi.galat;
+    // Sebagian rute menjawab dengan galat per kolom ({kolom, pesan}[]) supaya
+    // form bisa menandai kolom yang salah. Tanpa JSON.stringify di sini,
+    // `new Error(array)` memampatkannya jadi "[object Object]" dan pemohon
+    // hanya melihat itu, bukan alasan penolakannya.
+    throw new Error(
+      Array.isArray(g) ? JSON.stringify(g)
+        : typeof g === 'string' && g ? g
+          : `Gagal menghubungi server (HTTP ${jawab.status}).`
+    );
   }
   return isi as T;
 }

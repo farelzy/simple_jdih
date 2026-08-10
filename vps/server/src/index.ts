@@ -9,13 +9,13 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { bacaKonfig } from './konfig.js';
 import { siapkanSkema, pool } from './db.js';
-import { rutePublik } from './rute/publik.js';
-import { ruteAuth } from './rute/auth.js';
-import { ruteSetup, siapkanTokenPenyiapan } from './rute/setup.js';
-import { ruteAdmin } from './rute/admin.js';
-import { ruteUnggah } from './rute/unggah.js';
-import { rutePengajuan } from './rute/pengajuan.js';
-import { tangkapGalat } from './tengah/galat.js';
+import { rutePublik } from './routes/publik.js';
+import { ruteAuth } from './routes/auth.js';
+import { ruteSetup, siapkanTokenPenyiapan } from './routes/setup.js';
+import { ruteAdmin } from './routes/admin.js';
+import { ruteUnggah } from './routes/unggah.js';
+import { rutePengajuan } from './routes/pengajuan.js';
+import { tangkapGalat } from './middleware/galat.js';
 
 export function buatApp() {
   const app = express();

@@ -8,8 +8,8 @@
 
 import type { PoolConnection, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { pool, kueri, satu, jalankan } from '../db.js';
-import { nomorBerikutnya } from '../murni/penomoran.js';
-import { STATUS_PENGAJUAN, type Status } from '../murni/skema.js';
+import { nomorBerikutnya } from '../pure/penomoran.js';
+import { STATUS_PENGAJUAN, type Status } from '../pure/skema.js';
 
 export interface Pengajuan {
   id: number;
