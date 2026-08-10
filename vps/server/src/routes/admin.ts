@@ -24,6 +24,11 @@ import { logTerakhir, logCatat } from '../repo/log.js';
 import { rekapPerStatus, rekapPerOpd, rekapPerBulan, rataLamaProsesHari, cariMandek } from '../pure/rekap.js';
 import { TAHAP_RIWAYAT, STATUS_PENGAJUAN } from '../pure/skema.js';
 import { migrasiPeriksa, migrasiJalankan } from '../services/migrasi.js';
+import { buatBukuKerja } from '../services/ekspor.js';
+import {
+  cadanganDaftar, cadanganJalankan, jalurCadangan, tanggalJakarta, SIMPAN_HARI
+} from '../services/cadangan.js';
+import { existsSync } from 'node:fs';
 
 export const ruteAdmin = Router();
 
@@ -247,5 +252,61 @@ ruteAdmin.post('/migrasi', async (req, res, next) => {
       ujiCoba: ujiCoba !== false,
       aktor: bacaSesi(req)?.email ?? 'admin'
     }));
+  } catch (e) { next(e); }
+});
+
+/* ---------- Ekspor dan cadangan ---------- */
+
+const MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+/**
+ * Unduh seluruh pengajuan sebagai Excel, disusun sekarang juga.
+ *
+ * Susunan kolomnya sama persis dengan spreadsheet Google yang lama, supaya
+ * hasilnya bisa langsung dipakai orang yang sudah terbiasa dengan bentuk itu.
+ */
+ruteAdmin.get('/ekspor', async (req, res, next) => {
+  try {
+    const isi = await buatBukuKerja();
+    await logCatat({ aktor: bacaSesi(req)?.email ?? '', aksi: 'EKSPOR_EXCEL', rincian: '' });
+    res.setHeader('Content-Type', MIME_XLSX);
+    res.setHeader('Content-Disposition',
+      `attachment; filename="simpel-${tanggalJakarta()}.xlsx"`);
+    res.send(isi);
+  } catch (e) { next(e); }
+});
+
+ruteAdmin.get('/cadangan', async (_req, res, next) => {
+  try {
+    res.json({ simpanHari: SIMPAN_HARI, daftar: await cadanganDaftar() });
+  } catch (e) { next(e); }
+});
+
+/** Buat cadangan hari ini sekarang juga, menimpa yang sudah ada. */
+ruteAdmin.post('/cadangan', async (req, res, next) => {
+  try {
+    const hasil = await cadanganJalankan(tanggalJakarta(), true);
+    await logCatat({
+      aktor: bacaSesi(req)?.email ?? '', aksi: 'CADANGAN_MANUAL', rincian: hasil.nama
+    });
+    res.json(hasil);
+  } catch (e) { next(e); }
+});
+
+ruteAdmin.get('/cadangan/:nama', async (req, res, next) => {
+  try {
+    // jalurCadangan menolak nama yang tidak berpola, jadi '../' tidak pernah
+    // sampai ke sendFile.
+    let jalur: string;
+    try {
+      jalur = jalurCadangan(String(req.params.nama));
+    } catch {
+      throw new GalatKlien('Nama cadangan tidak sah.', 400);
+    }
+    if (!existsSync(jalur)) throw new GalatKlien('Cadangan tidak ditemukan.', 404);
+
+    res.setHeader('Content-Type', MIME_XLSX);
+    res.setHeader('Content-Disposition', `attachment; filename="${req.params.nama}"`);
+    res.sendFile(jalur);
   } catch (e) { next(e); }
 });

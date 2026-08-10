@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { panggilApi } from '../lib/api';
-import { formatTanggal, labelTahap } from '../lib/format';
+import { formatTanggal, formatUkuran, labelTahap } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { KolomSandi } from '../components/KolomSandi';
@@ -28,7 +28,7 @@ interface DataAdmin {
   status: string[];
 }
 
-const TAB = ['antrean', 'rekap', 'opd', 'admin', 'pengaturan', 'migrasi', 'log'] as const;
+const TAB = ['antrean', 'rekap', 'opd', 'admin', 'pengaturan', 'cadangan', 'migrasi', 'log'] as const;
 type Tab = (typeof TAB)[number];
 
 function hariIniIso(): string {
@@ -101,6 +101,7 @@ export function Admin() {
       {tab === 'opd' && <Opd data={data} aksi={aksi} />}
       {tab === 'admin' && <AdminTab data={data} aksi={aksi} />}
       {tab === 'pengaturan' && <Pengaturan data={data} aksi={aksi} />}
+      {tab === 'cadangan' && <Cadangan />}
       {tab === 'migrasi' && <Migrasi />}
       {tab === 'log' && <Log />}
     </>
@@ -640,5 +641,103 @@ function Log() {
       kepala={['Waktu', 'Aktor', 'Aksi', 'Rincian']}
       baris={baris.map((b) => [b.waktu, b.aktor, b.aksi, b.rincian])}
     />
+  );
+}
+
+/* ---------- Cadangan ---------- */
+
+interface InfoCadangan { nama: string; tanggal: string; ukuran: number }
+
+/**
+ * Ekspor Excel dan cadangan harian.
+ *
+ * Unduhan tidak lewat panggilApi: pembungkus itu mengurai jawaban sebagai
+ * JSON, sedangkan yang datang di sini berkas biner. Yang dipakai anchor biasa
+ * -- cookie sesi ikut terkirim sendiri, dan peramban yang mengurus namanya.
+ */
+function Cadangan() {
+  const [data, setData] = useState<{ simpanHari: number; daftar: InfoCadangan[] } | null>(null);
+  const [galat, setGalat] = useState('');
+  const [pesan, setPesan] = useState('');
+  const [sibuk, setSibuk] = useState(false);
+
+  const muat = useCallback(async () => {
+    try {
+      setData(await panggilApi('/api/admin/cadangan'));
+      setGalat('');
+    } catch (e) { setGalat((e as Error).message); }
+  }, []);
+
+  useEffect(() => { void muat(); }, [muat]);
+
+  async function cadangkanSekarang() {
+    setSibuk(true);
+    setGalat('');
+    setPesan('');
+    try {
+      const h = await panggilApi<{ nama: string }>('/api/admin/cadangan', { method: 'POST' });
+      setPesan(`Cadangan ${h.nama} dibuat.`);
+      await muat();
+    } catch (e) { setGalat((e as Error).message); }
+    finally { setSibuk(false); }
+  }
+
+  return (
+    <>
+      <section className="kartu">
+        <h2>Ekspor Excel</h2>
+        <p className="petunjuk">
+          Susunan kolomnya sama persis dengan spreadsheet Google yang lama &mdash; 18 kolom
+          form ditambah ID, email pemohon, kode OPD, dan jejak pembaruan. Kolom
+          &ldquo;Tanggal dan Detail Proses&rdquo; disusun ulang dari riwayat, jadi bentuknya
+          sama dengan yang selama ini diketik manual.
+        </p>
+        <div className="tombol-baris" style={{ justifyContent: 'flex-start' }}>
+          <a className="tombol tombol-utama" href="/api/admin/ekspor">Unduh Excel sekarang</a>
+        </div>
+      </section>
+
+      {galat && <div className="kartu kartu-peringatan"><p className="galat">{galat}</p></div>}
+      {pesan && <div className="kartu"><p>{pesan}</p></div>}
+
+      <section className="kartu">
+        <h2>Cadangan harian</h2>
+        <p className="petunjuk">
+          Sistem menulis satu berkas Excel tiap hari secara otomatis. Yang disimpan{' '}
+          {data?.simpanHari ?? 7} berkas terbaru &mdash; begitu ada yang baru, yang paling
+          tua terhapus sendiri.
+        </p>
+
+        {!data ? <p className="petunjuk">Memuat&hellip;</p> : data.daftar.length === 0 ? (
+          <p className="petunjuk">
+            Belum ada cadangan. Yang pertama dibuat otomatis dalam satu jam ke depan,
+            atau buat sekarang dengan tombol di bawah.
+          </p>
+        ) : (
+          <div className="tabel-bungkus">
+            <table className="tabel-lentur">
+              <thead><tr><th>Tanggal</th><th>Ukuran</th><th /></tr></thead>
+              <tbody>
+                {data.daftar.map((c) => (
+                  <tr key={c.nama}>
+                    <td><span className="kode">{c.tanggal}</span></td>
+                    <td>{formatUkuran(c.ukuran)}</td>
+                    <td>
+                      <a className="tombol" href={`/api/admin/cadangan/${c.nama}`}>Unduh</a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="tombol-baris" style={{ justifyContent: 'flex-start' }}>
+          <button className="tombol" onClick={() => void cadangkanSekarang()} disabled={sibuk}>
+            {sibuk ? 'Membuat…' : 'Buat cadangan hari ini sekarang'}
+          </button>
+        </div>
+      </section>
+    </>
   );
 }

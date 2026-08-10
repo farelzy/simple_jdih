@@ -50,6 +50,11 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`SIMPEL siap di 127.0.0.1:${konfig.port}`);
   });
 
+  // Cadangan harian. Dinyalakan setelah listen supaya kegagalan menulis
+  // cadangan tidak pernah menghalangi layanan menerima pengajuan.
+  const { jadwalkanCadangan } = await import('./services/cadangan.js');
+  jadwalkanCadangan();
+
   // systemd mengirim SIGTERM saat restart; tutup koneksi database dengan rapi
   // supaya tidak meninggalkan sesi menggantung di MariaDB.
   for (const sinyal of ['SIGTERM', 'SIGINT'] as const) {
