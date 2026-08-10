@@ -109,17 +109,42 @@ export function tebakTahap(keterangan: unknown): string {
   return 'LAINNYA';
 }
 
+/** Nama bulan yang benar-benar dikenali, untuk menemukan awal kejadian baru. */
+const NAMA_BULAN = Object.keys(ALIAS_BULAN).sort((a, b) => b.length - a.length).join('|');
+
+/**
+ * Awal kejadian baru: tanggal + nama bulan sungguhan, DAN berada di awal teks
+ * atau tepat setelah penanda butir.
+ *
+ * Kedua syarat itu ada karena kejadiannya nyata di data Bagian Hukum:
+ *
+ *   'Berkas BA PANSUS 6 diterima Bagian Hukum'
+ *       -- '6 diterima' cocok dengan "angka + kata", tapi 'diterima' bukan bulan
+ *
+ *   'rapat bersama Kanwil pada hari Senin, 4 Mei 2026 pukul 13.00 WIB'
+ *       -- '4 Mei 2026' memang tanggal, tapi ia bagian kalimat, bukan kejadian
+ *          baru; yang menandai kejadian baru adalah tanda hubung di depannya
+ *
+ * Tanpa kedua syarat ini, kalimat terbelah jadi kejadian palsu dan riwayat
+ * yang ditulis Bagian Hukum bertahun-tahun berubah bentuk saat dipindahkan.
+ */
+const POLA_AWAL_KEJADIAN = new RegExp(
+  `(?:^|[-*•–—]\\s*)(\\d{1,2})\\s+(?:${NAMA_BULAN})\\b`, 'gi'
+);
+
 /**
  * Pecah satu baris yang mungkin memuat lebih dari satu kejadian.
- * Contoh: '22 Juli 2026 Berkas masuk - 23 Juli 2026 Berkas direviu'
+ * Contoh: '- 22 Juli 2026 Berkas masuk - 23 Juli 2026 Berkas direviu'
  */
 function pecahKejadian(baris: string): string[] {
   const isi = String(baris ?? '');
-  const pola = new RegExp(POLA_TANGGAL.source, 'g');
+  const pola = new RegExp(POLA_AWAL_KEJADIAN.source, 'gi');
   const posisi: number[] = [];
   let cocok: RegExpExecArray | null;
   while ((cocok = pola.exec(isi)) !== null) {
-    posisi.push(cocok.index);
+    // Lompati penanda butir supaya potongan dimulai tepat di angka tanggalnya.
+    const geser = cocok[0].length - (cocok[0].length - cocok[0].indexOf(cocok[1] as string));
+    posisi.push(cocok.index + geser);
     if (pola.lastIndex === cocok.index) pola.lastIndex++;
   }
   if (posisi.length <= 1) return [isi];

@@ -55,11 +55,20 @@ export function tanggalDariTimestamp(teks: unknown): string {
   return '';
 }
 
-/** Rapatkan spasi dan buang baris kosong supaya perbandingan tidak salah alarm. */
+/**
+ * Rapatkan teks untuk perbandingan bolak-balik.
+ *
+ * Penanda butir di depan baris ikut dibuang. Perbandingan ini ada untuk
+ * menangkap kalimat yang hilang atau terbelah, bukan untuk mempersoalkan
+ * tanda hubung: baris lanjutan di data asli kadang ditulis tanpa tanda hubung,
+ * dan menyusunnya ulang selalu menambahkannya. Menghitung itu sebagai selisih
+ * membuat peringatan berbunyi untuk hal yang tidak perlu diperiksa siapa pun,
+ * lalu peringatan yang sungguhan ikut diabaikan.
+ */
 export function normalisasiBanding(teks: unknown): string {
   return String(teks ?? '')
     .split(/\r?\n/)
-    .map((b) => b.trim().replace(/\s+/g, ' '))
+    .map((b) => b.trim().replace(/^[-*•–—]+\s*/, '').replace(/\s+/g, ' '))
     .filter(Boolean)
     .join('\n');
 }

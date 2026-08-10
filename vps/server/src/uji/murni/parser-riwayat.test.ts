@@ -116,6 +116,49 @@ describe('uraiKolomProses', () => {
     expect(uraiKolomProses('- 22 Juli Berkas masuk', 2025)[0]!.tanggal).toBe('2025-07-22');
   });
 
+  /**
+   * Ketiga kalimat berikut disalin apa adanya dari spreadsheet Bagian Hukum,
+   * dan ketiganya sempat terbelah jadi kejadian palsu saat migrasi pertama.
+   *
+   * Sebabnya: pola pemisah dulu hanya menuntut "angka + kata", sehingga
+   * '6 diterima' dan '00 WIB' ikut dianggap awal kejadian baru.
+   */
+  it('tidak memotong kalimat pada angka yang diikuti kata biasa', () => {
+    const hasil = uraiKolomProses('- 19 Mei 2026 Berkas BA PANSUS 6 diterima Bagian Hukum', 2026);
+    expect(hasil).toHaveLength(1);
+    expect(hasil[0]!.keterangan).toBe('Berkas BA PANSUS 6 diterima Bagian Hukum');
+  });
+
+  it('tidak memotong daftar peserta yang memuat angka', () => {
+    const teks = '- 4 Juni 2026 Rapat Fasilitasi bersama Biro Hukum Jateng ' +
+                 '(Pansus 6 DPRD, Bapemperda DPRD, BPKAD Kab. Brebes, dan Bagian Hukum Setda Brebes)';
+    const hasil = uraiKolomProses(teks, 2026);
+    expect(hasil).toHaveLength(1);
+    expect(hasil[0]!.keterangan).toContain('Pansus 6 DPRD');
+    expect(hasil[0]!.keterangan).toContain('Bagian Hukum Setda Brebes)');
+  });
+
+  /**
+   * Tanggal di tengah kalimat bukan kejadian baru. Yang menandai kejadian baru
+   * adalah tanda hubung di depannya, bukan sekadar adanya tanggal.
+   */
+  it('tidak memotong tanggal yang menjadi bagian kalimat', () => {
+    const teks = '- 30 April 2026 Rencana rapat harmonisasi bersama Kanwil pada hari ' +
+                 'Senin, 4 Mei 2026 pukul 13.00 WIB s/d selesai';
+    const hasil = uraiKolomProses(teks, 2026);
+    expect(hasil).toHaveLength(1);
+    expect(hasil[0]!.tanggal).toBe('2026-04-30');
+    expect(hasil[0]!.keterangan).toContain('13.00 WIB s/d selesai');
+  });
+
+  it('tetap memecah dua kejadian sungguhan yang ditulis satu baris', () => {
+    const hasil = uraiKolomProses(
+      '- 22 Juli 2026 Berkas masuk ke sistem - 23 Juli 2026 Berkas sedang direviu Bagian Hukum', 2026
+    );
+    expect(hasil).toHaveLength(2);
+    expect(hasil[1]!.tanggal).toBe('2026-07-23');
+  });
+
   it('baris yang polanya tidak terbaca tetap dipindahkan utuh sebagai LAINNYA', () => {
     const hasil = uraiKolomProses('- 22 Juli 2026 Berkas masuk\nmenunggu konfirmasi dari pimpinan', 2026);
     expect(hasil).toHaveLength(2);
