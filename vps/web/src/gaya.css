@@ -49,7 +49,19 @@ body {
 }
 
 /* Halaman tidak pernah menggeser mendatar; tabel menggeser di wadahnya sendiri. */
-html, body { overflow-x: hidden; }
+/**
+ * Hanya di <html>, JANGAN ditambahkan ke <body>.
+ *
+ * `overflow-x: hidden` pada <body> memaksa overflow-y-nya jadi `auto`, dan
+ * <body> berubah jadi wadah gulir tersendiri. Tingginya mengikuti isi, jadi ia
+ * tidak pernah benar-benar tergulir -- dan setiap `position: sticky` di
+ * dalamnya kehilangan acuan lalu diam saja. Itu sempat mematikan navbar dan
+ * tab dashboard sekaligus.
+ *
+ * Pada <html>, nilainya diteruskan ke viewport, jadi pemotongan mendatar tetap
+ * berlaku tanpa membuat wadah gulir baru.
+ */
+html { overflow-x: hidden; }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
