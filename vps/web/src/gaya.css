@@ -61,7 +61,11 @@ html, body { overflow-x: hidden; }
 }
 
 .wadah { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-.wadah-sempit { max-width: 720px; }
+
+/* margin auto ikut disebut di sini karena wadah-sempit dipakai BERSARANG di
+   dalam .wadah, bukan berdampingan dengannya. Tanpa ini ia menempel ke kiri
+   dan sisi kanannya tidak sejajar dengan navbar. */
+.wadah-sempit { max-width: 720px; margin-left: auto; margin-right: auto; }
 .isi { padding: 32px 0 64px; min-height: calc(100vh - 200px); }
 .tersembunyi { display: none !important; }
 
@@ -103,6 +107,30 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
   padding: 12px 20px; font-size: 14px; text-align: center;
   font-weight: 500; color: var(--biru-tua); animation: slideDown .3s ease;
 }
+
+/* Sambutan halaman depan */
+.sambutan {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: fadeUp .4s ease both;
+}
+.sambutan h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  letter-spacing: -.5px;
+  background: linear-gradient(135deg, var(--biru-tua), var(--biru-utama));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sambutan p {
+  margin: 0 auto;
+  max-width: 640px;
+  color: var(--teks-lemah);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.judul-bagian { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
 
 /* Kartu */
 .kartu {
@@ -340,4 +368,10 @@ tbody tr:hover { background: var(--biru-muda); }
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+}
+
+@media (max-width: 640px) {
+  .sambutan h1 { font-size: 22px; }
+  .sambutan p { font-size: 13px; }
+  .sambutan { margin-bottom: 20px; }
 }

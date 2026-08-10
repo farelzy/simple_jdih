@@ -51,7 +51,15 @@ export function Monitoring() {
 
   return (
     <>
-      <h1>Monitoring Raperda/Raperbup</h1>
+      <header className="sambutan">
+        <h1>SIMPEL HUKUM BREBES</h1>
+        <p>
+          Sistem Informasi dan Manajemen Peraturan dan Pemantauan Proses Hukum
+          Raperda/Raperbup di Bagian Hukum Sekretariat Daerah Kabupaten Brebes
+        </p>
+      </header>
+
+      <h2 className="judul-bagian">Monitoring Raperda/Raperbup</h2>
 
       <div className="hitungan">
         <KotakHitungan angka={h.TOTAL} label="Total" />
