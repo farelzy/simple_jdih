@@ -172,6 +172,24 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
 .panduan h3 { margin: 4px 0 6px; font-size: 15px; }
 .panduan p { margin: 0; }
 
+/* Daftar isi panduan dashboard. */
+.daftar-isi { margin: 0; padding-left: 20px; }
+.daftar-isi li { margin-bottom: 6px; font-size: 14px; }
+.daftar-isi li:last-child { margin-bottom: 0; }
+
+/**
+ * Butir penjelasan. Dipakai untuk daftar <ul> maupun <ol>; yang <ol> tetap
+ * bernomor sendiri karena penanda bawaannya tidak dimatikan di sini.
+ */
+.poin { margin: 0 0 12px; padding-left: 20px; }
+.poin li { margin-bottom: 8px; font-size: 14px; line-height: 1.6; }
+.poin li:last-child { margin-bottom: 0; }
+.poin .lencana { margin-right: 6px; }
+
+/* Judul bagian pada halaman panduan, supaya lompatan #anchor tidak terhalang
+   navbar yang menempel. */
+[id] { scroll-margin-top: 80px; }
+
 /* Kartu */
 .kartu {
   background: var(--putih); border: 1px solid var(--garis);
@@ -505,6 +523,56 @@ tbody tr:hover { background: var(--biru-muda); }
   }
   .tab-bar::-webkit-scrollbar { display: none; }
   .tab-bar > .tombol { flex: 0 0 auto; }
+
+  /**
+   * Tabel .tabel-lentur berubah jadi tumpukan kartu.
+   *
+   * Empat kolom di layar 375px menyisakan sekitar 85px per kolom. Judul seperti
+   * "Surat Permohonan Rancangan Perda/Perbup" lalu membungkus jadi enam baris,
+   * dan satu baris tabel setinggi setengah layar. Menggesernya mendatar juga
+   * bukan jawaban -- tombol di kolom terakhir jadi tersembunyi.
+   *
+   * Judul kolom dibaca dari data-label tiap sel, jadi maknanya tidak hilang
+   * meski <thead> disembunyikan.
+   */
+  .tabel-lentur thead { display: none; }
+  .tabel-lentur, .tabel-lentur tbody, .tabel-lentur tr, .tabel-lentur td {
+    display: block; width: 100%;
+  }
+  .tabel-lentur tr {
+    background: var(--putih);
+    border: 1px solid var(--garis);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .tabel-lentur tr:hover { background: var(--putih); }
+  .tabel-lentur td {
+    border: none;
+    padding: 4px 0;
+    width: auto !important;
+    text-align: left !important;
+    white-space: normal;
+  }
+  .tabel-lentur td[data-label]:before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .6px;
+    color: var(--teks-lemah);
+    margin-bottom: 2px;
+  }
+  .tabel-lentur td:empty { display: none; }
+  .tabel-lentur td:last-child { padding-top: 8px; }
+  .tabel-lentur td:last-child .tombol { width: 100%; margin-bottom: 6px; }
+  .tabel-lentur td:last-child .tombol:last-child { margin-bottom: 0; }
+
+  /* Daftar berkas: nama dan ukuran berdesakan kalau tetap sebaris. */
+  .berkas li { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .berkas-ukuran { width: 100%; justify-content: space-between; }
+
+  .panduan li { padding-left: 38px; margin-left: 13px; }
+  .panduan li:before { width: 26px; height: 26px; left: -14px; font-size: 13px; }
 }
 
 /* Hormati pengguna yang mematikan animasi di sistemnya. */

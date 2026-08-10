@@ -8,6 +8,7 @@ import { Masuk } from './pages/Masuk';
 import { Admin } from './pages/Admin';
 import { Pengajuan } from './pages/Pengajuan';
 import { Panduan } from './pages/Panduan';
+import { TutorialAdmin } from './pages/TutorialAdmin';
 import { panggilApi } from './lib/api';
 
 /** Sementara, sampai halaman terkait selesai dibangun. */
@@ -52,6 +53,7 @@ export function App() {
           <Route path="ajukan" element={<Pengajuan />} />
           <Route path="panduan" element={<Panduan />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="admin/tutorial" element={<TutorialAdmin />} />
           <Route path="masuk" element={<Masuk />} />
           <Route path="setup" element={<Setup />} />
           <Route path="*" element={<SegeraHadir judul="Halaman tidak ditemukan" />} />

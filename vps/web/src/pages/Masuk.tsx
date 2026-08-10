@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { panggilApi } from '../lib/api';
 import { KolomSandi } from '../components/KolomSandi';
 
@@ -33,7 +33,8 @@ export function Masuk() {
       <form className="kartu" onSubmit={kirim}>
         <p className="petunjuk">
           Hanya untuk Bagian Hukum. OPD tidak perlu akun &mdash; pengajuan dan
-          monitoring terbuka tanpa masuk.
+          monitoring terbuka tanpa masuk.{' '}
+          <Link to="/admin/tutorial">Panduan dashboard</Link>
         </p>
 
         {galat && <p className="galat">{galat}</p>}

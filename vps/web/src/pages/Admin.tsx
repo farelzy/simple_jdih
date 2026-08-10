@@ -82,7 +82,9 @@ export function Admin() {
     <>
       <div className="baris-atas">
         <h1 style={{ margin: 0 }}>Dashboard Bagian Hukum</h1>
-        <span className="petunjuk">{data.emailSaya}</span>
+        <span className="petunjuk">
+          <Link to="/admin/tutorial">Panduan dashboard</Link> &middot; {data.emailSaya}
+        </span>
       </div>
 
       <div className="saringan tab-bar">
@@ -325,9 +327,9 @@ function Opd({ data, aksi }: { data: DataAdmin; aksi: Aksi }) {
                 ? <tr><td colSpan={4} className="petunjuk">Belum ada OPD terdaftar</td></tr>
                 : data.opd.map((o) => (
                     <tr key={o.id}>
-                      <td><span className="kode">{o.kode}</span></td>
-                      <td>{o.nama_resmi}</td>
-                      <td>{o.nama_singkat}</td>
+                      <td data-label="Kode"><span className="kode">{o.kode}</span></td>
+                      <td data-label="Nama resmi">{o.nama_resmi}</td>
+                      <td data-label="Singkat">{o.nama_singkat}</td>
                       <td>
                         <button className="tombol" onClick={() => {
                           const baru = prompt(`Kode baru untuk ${o.nama_resmi}:`, o.kode);
@@ -720,8 +722,8 @@ function Cadangan() {
               <tbody>
                 {data.daftar.map((c) => (
                   <tr key={c.nama}>
-                    <td><span className="kode">{c.tanggal}</span></td>
-                    <td>{formatUkuran(c.ukuran)}</td>
+                    <td data-label="Tanggal"><span className="kode">{c.tanggal}</span></td>
+                    <td data-label="Ukuran">{formatUkuran(c.ukuran)}</td>
                     <td>
                       <a className="tombol" href={`/api/admin/cadangan/${c.nama}`}>Unduh</a>
                     </td>

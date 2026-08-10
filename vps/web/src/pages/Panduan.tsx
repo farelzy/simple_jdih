@@ -111,13 +111,13 @@ export function Panduan() {
                 <tbody>
                   {berkas.map(([kunci, a]) => (
                     <tr key={kunci}>
-                      <td>{a.judul}</td>
-                      <td>{a.ekstensi.join(', ').toUpperCase()}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td data-label="Berkas">{a.judul}</td>
+                      <td data-label="Format">{a.ekstensi.join(', ').toUpperCase()}</td>
+                      <td data-label="Maks" style={{ whiteSpace: 'nowrap' }}>
                         {a.batasMb} MB
                         {a.maksBerkas > 1 && <> &middot; {a.maksBerkas} berkas</>}
                       </td>
-                      <td style={{ whiteSpace: 'normal' }}>
+                      <td data-label="Keterangan" style={{ whiteSpace: 'normal' }}>
                         {a.hanyaPerda
                           ? <span className="lencana lencana-proses">Khusus Raperda</span>
                           : a.wajib
