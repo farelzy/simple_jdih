@@ -8,6 +8,7 @@
 
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { ruteExcel } from './excel.js';
 import { wajibAdmin, bacaSesi } from '../middleware/auth.js';
 import { GalatKlien } from '../middleware/galat.js';
 import {
@@ -28,9 +29,14 @@ import { buatBukuKerja } from '../services/ekspor.js';
 import {
   cadanganDaftar, cadanganJalankan, jalurCadangan, tanggalJakarta, SIMPAN_HARI
 } from '../services/cadangan.js';
+import { buatCadanganPenuh } from '../services/cadangan-penuh.js';
 import { existsSync } from 'node:fs';
 
 export const ruteAdmin = Router();
+
+// Migrasi lewat unggahan berkas Excel. Isinya sama di wizard penyiapan dan
+// dashboard, jadi ditulis sekali di routes/excel.ts.
+ruteAdmin.use(ruteExcel());
 
 /** Alasan pengembalian yang berulang di data nyata, jadi pilihan cepat. */
 const ALASAN_KEMBALI = [
@@ -308,5 +314,27 @@ ruteAdmin.get('/cadangan/:nama', async (req, res, next) => {
     res.setHeader('Content-Type', MIME_XLSX);
     res.setHeader('Content-Disposition', `attachment; filename="${req.params.nama}"`);
     res.sendFile(jalur);
+  } catch (e) { next(e); }
+});
+
+/**
+ * Cadangan penuh untuk pindah server: basis data, berkas unggahan, dan
+ * petunjuk pemulihan dalam satu arsip.
+ *
+ * Sengaja tidak disimpan di disk seperti cadangan harian. Isinya memuat hash
+ * kata sandi admin dan seluruh kode OPD; menaruhnya sebagai berkas yang
+ * menetap di server justru menambah satu tempat lagi yang harus dijaga.
+ */
+ruteAdmin.get('/cadangan-penuh', async (req, res, next) => {
+  try {
+    const hasil = await buatCadanganPenuh();
+    await logCatat({
+      aktor: bacaSesi(req)?.email ?? '',
+      aksi: 'CADANGAN_PENUH',
+      rincian: `${hasil.nama} (${hasil.jumlahBerkas} berkas unggahan)`
+    });
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', `attachment; filename="${hasil.nama}"`);
+    res.send(hasil.isi);
   } catch (e) { next(e); }
 });

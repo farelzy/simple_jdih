@@ -409,6 +409,19 @@ label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
   border-color: var(--biru-utama); background: var(--biru-muda);
   box-shadow: var(--bayang-biru);
 }
+/**
+ * Pemilih sumber migrasi: dua kartu berdampingan, sama seperti pilihan jenis
+ * peraturan di form pengajuan.
+ */
+.pilihan-sumber { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.pilihan-sumber .kartu { margin: 0; padding: 16px; border: 2px solid var(--garis); }
+.pilihan-sumber .kartu:hover { border-color: var(--biru-aksen); }
+.pilihan-sumber .kartu.aktif {
+  border-color: var(--biru-utama);
+  background: var(--biru-muda);
+  box-shadow: var(--bayang-biru);
+}
+
 .kolom-berkas { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--garis); }
 .kolom-berkas:last-child { border-bottom: none; margin-bottom: 0; }
 
@@ -509,7 +522,7 @@ tbody tr:hover { background: var(--biru-muda); }
 
   .tombol-baris { flex-direction: column-reverse; }
   .tombol-baris .tombol { width: 100%; }
-  .pilihan-jenis { grid-template-columns: 1fr; }
+  .pilihan-jenis, .pilihan-sumber { grid-template-columns: 1fr; }
   .linimasa li { padding: 0 0 18px 24px; }
 
   /* Tab dashboard menggeser mendatar daripada menumpuk jadi tujuh baris.

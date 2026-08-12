@@ -1,26 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { panggilApi } from '../lib/api';
+import {
+  PemilihSumber, periksaSumber, jalankanSumber, sumberSiap,
+  type Sumber, type HasilPeriksa, type LaporanMigrasi
+} from '../components/SumberMigrasi';
 import { KolomSandi } from '../components/KolomSandi';
 
-interface LaporanMigrasi {
-  barisDibaca: number;
-  barisDisisipkan: number;
-  dilewati: string[];
-  riwayatTerurai: number;
-  riwayatLainnya: number;
-  berkasTertaut: number;
-  opdPerluPeriksa: string[];
-  selisihKolom16: string[];
-  ujiCoba: boolean;
-}
-
-interface HasilPeriksa {
-  sah: boolean;
-  pesan: string;
-  jenis?: string;
-  jumlahBaris?: number;
-}
 
 export function Setup() {
   const navigate = useNavigate();
@@ -36,7 +22,7 @@ export function Setup() {
   const [sandi, setSandi] = useState('');
 
   // Langkah 2
-  const [sumber, setSumber] = useState('');
+  const [sumber, setSumber] = useState<Sumber>({ jenis: 'tautan', tautan: '' });
   const [periksa, setPeriksa] = useState<HasilPeriksa | null>(null);
   const [laporan, setLaporan] = useState<LaporanMigrasi | null>(null);
 
@@ -67,10 +53,7 @@ export function Setup() {
     setLaporan(null);
     setSibuk(true);
     try {
-      setPeriksa(await panggilApi<HasilPeriksa>('/api/setup/periksa-sheet', {
-        method: 'POST',
-        body: JSON.stringify({ sumber: sumber.trim() })
-      }));
+      setPeriksa(await periksaSumber('/api/setup', sumber));
     } catch (e) {
       setGalat((e as Error).message);
     } finally {
@@ -82,10 +65,7 @@ export function Setup() {
     setGalat('');
     setSibuk(true);
     try {
-      setLaporan(await panggilApi<LaporanMigrasi>('/api/setup/migrasi', {
-        method: 'POST',
-        body: JSON.stringify({ sumber: sumber.trim(), ujiCoba })
-      }));
+      setLaporan(await jalankanSumber('/api/setup', sumber, ujiCoba));
       if (!ujiCoba) setLangkah(3);
     } catch (e) {
       setGalat((e as Error).message);
@@ -163,23 +143,18 @@ export function Setup() {
         <section className="kartu">
           <h2>2. Pindahkan data dari spreadsheet lama</h2>
           <p className="petunjuk">
-            Salin URL spreadsheet <em>PERMOHONAN RAPERDA/RAPERBUP</em> dari address bar.
-            Spreadsheet aslinya tidak akan disentuh &mdash; hanya dibaca. Aksesnya harus
-            disetel minimal &ldquo;Siapa saja yang memiliki link&rdquo; sebagai Pelihat.
+            Data spreadsheet <em>PERMOHONAN RAPERDA/RAPERBUP</em> dipindahkan ke sini.
+            Spreadsheet aslinya tidak akan disentuh &mdash; hanya dibaca.
           </p>
 
-          <label>
-            Link spreadsheet
-            <input value={sumber} onChange={(e) => { setSumber(e.target.value); setPeriksa(null); }}
-                   placeholder="https://docs.google.com/spreadsheets/d/.../edit?gid=..." />
-          </label>
+          <PemilihSumber nilai={sumber} ubah={setSumber} saatBerubah={() => setPeriksa(null)} />
 
           <div className="tombol-baris">
             <button className="tombol" onClick={() => setLangkah(3)} disabled={sibuk}>
               Lewati, isi manual nanti
             </button>
-            <button className="tombol tombol-utama" onClick={periksaSheet} disabled={sibuk || !sumber.trim()}>
-              {sibuk ? 'Memeriksa…' : 'Periksa spreadsheet →'}
+            <button className="tombol tombol-utama" onClick={periksaSheet} disabled={sibuk || !sumberSiap(sumber)}>
+              {sibuk ? 'Memeriksa…' : 'Periksa data →'}
             </button>
           </div>
 

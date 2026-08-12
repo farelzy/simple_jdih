@@ -9,6 +9,10 @@ export async function panggilApi<T>(jalur: string, opsi: RequestInit = {}): Prom
     ...opsi
   });
 
+  return bacaJawaban<T>(jawab);
+}
+
+async function bacaJawaban<T>(jawab: Response): Promise<T> {
   const isi = (await jawab.json().catch(() => ({}))) as { galat?: unknown };
   if (!jawab.ok) {
     const g = isi.galat;
@@ -23,6 +27,22 @@ export async function panggilApi<T>(jalur: string, opsi: RequestInit = {}): Prom
     );
   }
   return isi as T;
+}
+
+/**
+ * Kirim satu berkas sebagai bytes mentah.
+ *
+ * Bukan multipart: server membaca badan permintaan apa adanya, mengikuti cara
+ * rute unggah berkas pengajuan. Content-Type sengaja octet-stream supaya
+ * express.json() melewatinya dan alirannya masih utuh saat dibaca.
+ */
+export async function kirimBerkas<T>(jalur: string, berkas: File): Promise<T> {
+  return bacaJawaban<T>(await fetch(jalur, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: berkas
+  }));
 }
 
 export interface RingkasPengajuan {

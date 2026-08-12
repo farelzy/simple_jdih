@@ -37,6 +37,15 @@ export interface OpsiMigrasi {
   /** Tautan/ID spreadsheet, atau isi CSV mentah bila sudah diunduh sendiri. */
   sumber: string;
   isiCsv?: string;
+  /**
+   * Baris yang sudah terurai, dipakai jalur unggah Excel.
+   *
+   * Diutamakan di atas isiCsv dan sumber. Melewati CSV sepenuhnya bukan
+   * sekadar hemat langkah: mengubah sel Excel jadi CSV lalu menguraikannya
+   * lagi memaksa lini masa bertingkat di kolom 16 melewati dua kali pemetikan
+   * tanda kutip dan baris baru, dan setiap kali itulah bentuknya berubah.
+   */
+  baris?: readonly (readonly string[])[];
   ujiCoba: boolean;
   aktor?: string;
 }
@@ -73,6 +82,19 @@ export function normalisasiBanding(teks: unknown): string {
     .join('\n');
 }
 
+/**
+ * Baris data, dari mana pun asalnya.
+ *
+ * Satu tempat yang menentukan urutan sumber, supaya migrasiPeriksa dan
+ * migrasiJalankan tidak bisa memilih sumber yang berbeda dari opsi yang sama --
+ * pemeriksaan yang melaporkan berkas A lalu menjalankan berkas B adalah
+ * kegagalan yang tidak akan terlihat sampai datanya sudah masuk.
+ */
+async function ambilBaris(opsi: OpsiMigrasi): Promise<string[][]> {
+  if (opsi.baris) return opsi.baris.map((b) => [...b]);
+  return uraiCsv(await ambilCsv(opsi));
+}
+
 async function ambilCsv(opsi: OpsiMigrasi): Promise<string> {
   if (opsi.isiCsv) return opsi.isiCsv;
 
@@ -106,7 +128,7 @@ export async function migrasiPeriksa(opsi: OpsiMigrasi): Promise<{
   hilang?: string[];
 }> {
   try {
-    const baris = uraiCsv(await ambilCsv(opsi));
+    const baris = await ambilBaris(opsi);
     if (!baris.length) return { sah: false, pesan: 'Spreadsheet kosong.' };
 
     const cocok = cocokkanHeader(baris[0] as string[]);
@@ -148,7 +170,7 @@ export async function migrasiJalankan(opsi: OpsiMigrasi): Promise<LaporanMigrasi
     opdPerluPeriksa: [], selisihKolom16: [], ujiCoba: opsi.ujiCoba
   };
 
-  const semua = uraiCsv(await ambilCsv(opsi));
+  const semua = await ambilBaris(opsi);
   if (semua.length < 2) throw new Error('Spreadsheet tidak berisi data apa pun.');
 
   const peta = cocokkanHeader(semua[0] as string[]).peta;

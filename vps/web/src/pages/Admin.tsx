@@ -5,6 +5,10 @@ import { formatTanggal, formatUkuran, labelTahap } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { KolomSandi } from '../components/KolomSandi';
+import {
+  PemilihSumber, periksaSumber, jalankanSumber, sumberSiap,
+  type Sumber, type HasilPeriksa
+} from '../components/SumberMigrasi';
 
 interface BarisAntrean {
   nomor: string; judul: string; opd: string; status: string;
@@ -531,17 +535,17 @@ interface LaporanMigrasi {
 }
 
 function Migrasi() {
-  const [sumber, setSumber] = useState('');
-  const [periksa, setPeriksa] = useState<{ sah: boolean; pesan: string; jumlahBaris?: number } | null>(null);
+  const [sumber, setSumber] = useState<Sumber>({ jenis: 'tautan', tautan: '' });
+  const [periksa, setPeriksa] = useState<HasilPeriksa | null>(null);
   const [laporan, setLaporan] = useState<LaporanMigrasi | null>(null);
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState(false);
 
-  async function jalan<T>(jalur: string, badan: unknown, pasang: (h: T) => void) {
+  async function jalan<T>(kerja: () => Promise<T>, pasang: (h: T) => void) {
     setGalat('');
     setSibuk(true);
     try {
-      pasang(await panggilApi<T>(jalur, { method: 'POST', body: JSON.stringify(badan) }));
+      pasang(await kerja());
     } catch (e) {
       setGalat((e as Error).message);
     } finally {
@@ -553,23 +557,20 @@ function Migrasi() {
     <section className="kartu">
       <h2>Migrasi dari spreadsheet lama</h2>
       <p className="petunjuk">
-        Spreadsheet aslinya tidak akan disentuh &mdash; hanya dibaca lewat ekspor CSV
-        publik Google. Aksesnya harus disetel minimal &ldquo;Siapa saja yang memiliki
-        link&rdquo; sebagai Pelihat. Migrasi idempoten: dijalankan dua kali tidak
-        menggandakan data.
+        Ambil dari link spreadsheet, atau unggah berkas Excel hasil unduhan bila
+        aksesnya tidak boleh dibuka lewat link. Spreadsheet aslinya tidak akan disentuh
+        &mdash; hanya dibaca. Migrasi idempoten: dijalankan dua kali tidak menggandakan
+        data.
       </p>
 
       {galat && <p className="galat">{galat}</p>}
 
-      <label>
-        Link spreadsheet
-        <input value={sumber} onChange={(e) => { setSumber(e.target.value); setPeriksa(null); setLaporan(null); }}
-               placeholder="https://docs.google.com/spreadsheets/d/.../edit?gid=..." />
-      </label>
+      <PemilihSumber nilai={sumber} ubah={setSumber}
+                     saatBerubah={() => { setPeriksa(null); setLaporan(null); }} />
 
       <div className="tombol-baris">
-        <button className="tombol tombol-utama" disabled={sibuk || !sumber.trim()}
-                onClick={() => jalan('/api/admin/periksa-sheet', { sumber: sumber.trim() }, setPeriksa)}>
+        <button className="tombol tombol-utama" disabled={sibuk || !sumberSiap(sumber)}
+                onClick={() => jalan(() => periksaSumber('/api/admin', sumber), setPeriksa)}>
           {sibuk ? 'Memeriksa…' : 'Periksa →'}
         </button>
       </div>
@@ -580,11 +581,11 @@ function Migrasi() {
           {periksa.sah && (
             <div className="tombol-baris">
               <button className="tombol" disabled={sibuk}
-                      onClick={() => jalan('/api/admin/migrasi', { sumber: sumber.trim(), ujiCoba: true }, setLaporan)}>
+                      onClick={() => jalan(() => jalankanSumber('/api/admin', sumber, true), setLaporan)}>
                 Uji coba
               </button>
               <button className="tombol tombol-utama" disabled={sibuk}
-                      onClick={() => jalan('/api/admin/migrasi', { sumber: sumber.trim(), ujiCoba: false }, setLaporan)}>
+                      onClick={() => jalan(() => jalankanSumber('/api/admin', sumber, false), setLaporan)}>
                 Jalankan migrasi
               </button>
             </div>
@@ -686,6 +687,23 @@ function Cadangan() {
 
   return (
     <>
+      <section className="kartu kartu-peringatan">
+        <h2>Cadangan penuh &mdash; untuk pindah server</h2>
+        <p className="petunjuk">
+          Satu arsip <span className="kode">.tar.gz</span> berisi seluruh isi basis data,
+          semua berkas yang diunggah OPD, salinan Excel, dan petunjuk pemulihan langkah
+          demi langkah. Inilah yang dipakai kalau sistem harus dipindahkan ke server lain.
+        </p>
+        <p className="petunjuk">
+          <strong>Isinya rahasia.</strong> Di dalamnya ada hash kata sandi admin dan
+          seluruh kode OPD &mdash; kunci masuk form pengajuan. Simpan seperti Anda
+          menyimpan kata sandi, jangan diunggah ke tempat yang bisa dibaca umum.
+        </p>
+        <div className="tombol-baris" style={{ justifyContent: 'flex-start' }}>
+          <a className="tombol" href="/api/admin/cadangan-penuh">Unduh cadangan penuh</a>
+        </div>
+      </section>
+
       <section className="kartu">
         <h2>Ekspor Excel</h2>
         <p className="petunjuk">
