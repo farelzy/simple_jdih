@@ -13,6 +13,7 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
 import { ruteExcel } from './excel.js';
+import { rutePulihkan } from './pulihkan.js';
 import { adminBuat, adminHitungAktif, adminCari } from '../repo/admin.js';
 import { buatToken, pasangCookie, wajibAdmin } from '../middleware/auth.js';
 import { batasMasuk } from '../middleware/rate-limit.js';
@@ -61,6 +62,7 @@ export const ruteSetup = Router();
 // Migrasi lewat unggahan berkas Excel. Isinya sama di wizard penyiapan dan
 // dashboard, jadi ditulis sekali di routes/excel.ts.
 ruteSetup.use(ruteExcel());
+ruteSetup.use(rutePulihkan());
 
 ruteSetup.get('/status', async (_req, res, next) => {
   try {

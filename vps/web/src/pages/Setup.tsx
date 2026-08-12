@@ -6,6 +6,7 @@ import {
   type Sumber, type HasilPeriksa, type LaporanMigrasi
 } from '../components/SumberMigrasi';
 import { KolomSandi } from '../components/KolomSandi';
+import { Pulihkan } from '../components/Pulihkan';
 
 
 export function Setup() {
@@ -183,6 +184,8 @@ export function Setup() {
           {laporan && <Laporan laporan={laporan} />}
         </section>
       )}
+
+      {langkah === 2 && <Pulihkan awalan="/api/setup" />}
 
       {langkah === 3 && (
         <section className="kartu">

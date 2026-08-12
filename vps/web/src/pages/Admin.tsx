@@ -5,6 +5,7 @@ import { formatTanggal, formatUkuran, labelTahap } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { KolomSandi } from '../components/KolomSandi';
+import { Pulihkan } from '../components/Pulihkan';
 import {
   PemilihSumber, periksaSumber, jalankanSumber, sumberSiap,
   type Sumber, type HasilPeriksa
@@ -703,6 +704,8 @@ function Cadangan() {
           <a className="tombol" href="/api/admin/cadangan-penuh">Unduh cadangan penuh</a>
         </div>
       </section>
+
+      <Pulihkan awalan="/api/admin" />
 
       <section className="kartu">
         <h2>Ekspor Excel</h2>

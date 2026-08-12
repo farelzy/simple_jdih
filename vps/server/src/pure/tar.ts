@@ -85,3 +85,58 @@ export function susunTar(entri: readonly EntriTar[], waktuBaku = 0): Buffer {
 
   return Buffer.concat(potongan);
 }
+
+/** Nama yang berbahaya untuk ditulis ke disk. */
+function namaBerbahaya(nama: string): boolean {
+  return nama.startsWith('/')
+    || nama.includes('\\')
+    || nama.split('/').includes('..');
+}
+
+/**
+ * Bongkar arsip tar jadi daftar entri.
+ *
+ * Nama yang hendak keluar dari folder tujuan ditolak di sini, bukan di
+ * pemanggilnya. Arsip pemulihan diunggah manusia dan bisa saja bukan buatan
+ * sistem ini; `../../etc/cron.d/x` di dalam tar adalah cara klasik untuk
+ * menulis ke mana pun lewat fitur "pulihkan cadangan".
+ */
+export function bacaTar(tar: Buffer): EntriTar[] {
+  const hasil: EntriTar[] = [];
+  let p = 0;
+
+  while (p + BLOK <= tar.length) {
+    const kepala = tar.subarray(p, p + BLOK);
+
+    // Blok nol menandai akhir arsip.
+    if (kepala.every((b) => b === 0)) break;
+
+    const nama = kepala.subarray(0, MAKS_NAMA).toString('utf8').replace(/\0.*$/s, '').trim();
+    if (!nama) break;
+
+    const ukuranTeks = kepala.subarray(124, 136).toString('utf8').replace(/\0.*$/s, '').trim();
+    const ukuran = parseInt(ukuranTeks, 8);
+    if (!Number.isFinite(ukuran) || ukuran < 0) {
+      throw new Error(`Arsip rusak: ukuran tidak terbaca pada entri '${nama}'.`);
+    }
+
+    p += BLOK;
+    if (p + ukuran > tar.length) {
+      throw new Error(`Arsip terpotong: entri '${nama}' tidak lengkap.`);
+    }
+
+    const jenis = String.fromCharCode(kepala[156] ?? 0x30);
+    // '0' dan '\0' sama-sama berarti berkas biasa. Folder ('5') dan yang lain
+    // dilewati: pemulihan hanya perlu isi berkas.
+    if (jenis === '0' || jenis === '\0') {
+      if (namaBerbahaya(nama)) {
+        throw new Error(`Arsip memuat nama berkas yang tidak sah: '${nama}'.`);
+      }
+      hasil.push({ nama, isi: Buffer.from(tar.subarray(p, p + ukuran)) });
+    }
+
+    p += Math.ceil(ukuran / BLOK) * BLOK;
+  }
+
+  return hasil;
+}

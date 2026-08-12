@@ -9,6 +9,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { ruteExcel } from './excel.js';
+import { rutePulihkan } from './pulihkan.js';
 import { wajibAdmin, bacaSesi } from '../middleware/auth.js';
 import { GalatKlien } from '../middleware/galat.js';
 import {
@@ -37,6 +38,7 @@ export const ruteAdmin = Router();
 // Migrasi lewat unggahan berkas Excel. Isinya sama di wizard penyiapan dan
 // dashboard, jadi ditulis sekali di routes/excel.ts.
 ruteAdmin.use(ruteExcel());
+ruteAdmin.use(rutePulihkan());
 
 /** Alasan pengembalian yang berulang di data nyata, jadi pilihan cepat. */
 const ALASAN_KEMBALI = [
