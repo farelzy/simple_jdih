@@ -371,6 +371,55 @@ journalctl -u simpel -n 40 | grep -A2 "BELUM DISIAPKAN"
 Buka `/setup`, masukkan token, buat admin pertama. Lalu pilih salah satu:
 migrasi dari spreadsheet, unggah Excel, atau pulihkan dari cadangan penuh.
 
+### VPS di balik NAT
+
+Sebagian VPS murah tidak punya IP publik sendiri; yang publik adalah IP mesin
+induk, dan hanya beberapa port yang diteruskan ke VM. Cirinya: `ip addr`
+menunjukkan alamat privat (`192.168.x.x`) sementara `curl https://api.ipify.org`
+menjawab alamat publik yang berbeda.
+
+Kalau port 80 dan 443 tidak ikut diteruskan, dua hal sekaligus mustahil: situs
+tidak bisa diakses, dan Let's Encrypt tidak bisa menerbitkan sertifikat karena
+validasinya menghubungi port 80.
+
+Dua jalan keluar:
+
+| | Buka port | Cloudflare Tunnel |
+|---|---|---|
+| Yang dibutuhkan | provider meneruskan 80 dan 443 | akun Cloudflare, NS domain diarahkan ke sana |
+| Arah sambungan | masuk | **keluar**, dari server ke Cloudflare |
+| TLS | Caddy, Let's Encrypt | Cloudflare di tepi |
+| IP server | terekspos | tersembunyi |
+
+Jalur tunnel dipakai pada pemasangan `simplehukumbrebes.my.id`, karena
+providernya menuntut biaya bulanan IP dedicated yang menggandakan ongkos VPS.
+
+```
+Pengunjung → HTTPS → Cloudflare → tunnel keluar (QUIC)
+                                    ↓
+                        cloudflared → Caddy :80 → app :3101 → MariaDB
+```
+
+Caddy sengaja tetap HTTP saja di jalur ini. Menumpuk TLS dua lapis menambah
+sertifikat yang harus diperbarui tanpa menambah keamanan — jalur tunnel-nya
+sendiri sudah terenkripsi.
+
+Dua skrip disediakan di server:
+
+| Berkas | Kegunaan |
+|---|---|
+| `/opt/simpel/pasang-tunnel.sh <token>` | pasang cloudflared, arahkan Caddy ke mode HTTP |
+| `/opt/simpel/aktifkan-ssl.sh` | beralih ke Caddy + Let's Encrypt bila port 80/443 akhirnya dibuka |
+
+`aktifkan-ssl.sh` memeriksa lebih dulu apakah port 80 benar-benar sampai dari
+luar. Menyalakan HTTPS sebelum itu membuat Let's Encrypt menolak berulang kali,
+dan jatah percobaannya (5 per jam per domain) habis justru sebelum sempat
+berhasil sekali pun.
+
+Catatan Cloudflare Tunnel: record A lama untuk apex **tidak** diganti otomatis
+saat route dibuat — ia menolak karena bentrok. Hapus record A-nya lebih dulu di
+DNS, baru tambahkan route.
+
 ### Variabel lingkungan
 
 | Kunci | Wajib | Keterangan |
@@ -432,8 +481,11 @@ penasihat, gap lock, dan constraint UNIQUE tidak bisa diuji dengan tiruan.
 | "Terlalu banyak permintaan" | pembatas laju; tunggu, bukan kerusakan |
 | Halaman tampak versi lama | cache peramban; `Ctrl+Shift+R` |
 | `position: sticky` tidak jalan | `overflow-x: hidden` pada `<body>` — jangan pernah ditambahkan di sana |
-| Caddy gagal dimuat ulang | biasanya izin folder log; `caddy validate --config` dulu |
+| Caddy gagal dimuat ulang | `admin off` mematikan API di :2019, dan `caddy reload` lewat API itu — pakai `systemctl restart caddy` |
 | Sertifikat tidak terbit | port 80 tidak sampai ke mesin; Let's Encrypt memvalidasi lewat sana |
+| Cloudflare 521 | tunnel belum jalan, atau DNS masih menunjuk IP asal yang portnya tertutup |
+| Cloudflare 1016 | tidak ada record DNS untuk hostname itu; route tunnel belum dibuat |
+| Situs terbuka di HP tapi tidak di laptop | resolver jaringan hanya mengembalikan AAAA sementara IPv6 setempat mati; pakai DNS-over-HTTPS atau ganti resolver |
 
 ---
 
