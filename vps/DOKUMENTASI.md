@@ -420,6 +420,54 @@ Catatan Cloudflare Tunnel: record A lama untuk apex **tidak** diganti otomatis
 saat route dibuat — ia menolak karena bentrok. Hapus record A-nya lebih dulu di
 DNS, baru tambahkan route.
 
+### Zona waktu
+
+Seluruh sistem memakai **WIB (Asia/Jakarta)**. Tiga tempat harus disetel, dan
+melewatkan salah satunya membuat catatan waktu meleset tujuh jam tanpa gejala
+yang mencolok:
+
+```bash
+# 1. Sistem operasi
+sudo timedatectl set-timezone Asia/Jakarta
+
+# 2. MariaDB mengikuti jam sistem (time_zone = SYSTEM), tapi baru membacanya
+#    saat dijalankan ulang
+sudo systemctl restart mariadb
+
+# 3. Proses Node — sudah disebut di deploy/simpel.service
+#    Environment=TZ=Asia/Jakarta
+```
+
+Periksa ketiganya sekaligus:
+
+```bash
+date "+%Y-%m-%d %H:%M:%S %Z"
+mariadb -u simpel -p -N -e "SELECT NOW();"
+sudo -u simpel node -e "console.log(new Date().toLocaleString('sv-SE'), Intl.DateTimeFormat().resolvedOptions().timeZone)"
+```
+
+**Kalau zona diubah pada sistem yang sudah berisi data**, nilai lama tidak ikut
+bergeser: kolom `DATETIME` tidak menyimpan zona, jadi angka yang dicatat saat
+server masih UTC kini terbaca sebagai WIB dan meleset tujuh jam mundur. Geser
+sekali, di dalam transaksi:
+
+```sql
+START TRANSACTION;
+UPDATE pengajuan SET dibuat_pada     = dibuat_pada     + INTERVAL 7 HOUR;
+UPDATE pengajuan SET diperbarui_pada = diperbarui_pada + INTERVAL 7 HOUR;
+UPDATE riwayat   SET dicatat_pada    = dicatat_pada    + INTERVAL 7 HOUR;
+UPDATE berkas    SET diunggah_pada   = diunggah_pada   + INTERVAL 7 HOUR;
+UPDATE admin     SET dibuat_pada     = dibuat_pada     + INTERVAL 7 HOUR;
+UPDATE log       SET waktu           = waktu           + INTERVAL 7 HOUR;
+COMMIT;
+```
+
+`riwayat.tanggal` sengaja tidak ikut: tipenya `DATE`, tidak punya jam, dan
+menggesernya justru berisiko memindahkan kejadian ke hari lain.
+
+Baris hasil migrasi tidak terganggu — `dibuat_pada`-nya berjam `00:00:00`,
+sehingga bergeser jadi `07:00:00` pada tanggal yang sama.
+
 ### Variabel lingkungan
 
 | Kunci | Wajib | Keterangan |

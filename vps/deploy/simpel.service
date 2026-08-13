@@ -8,6 +8,17 @@ Type=simple
 User=finnacantik
 WorkingDirectory=/opt/simpel/server
 EnvironmentFile=/opt/simpel/server/.env
+
+# Jam proses Node disamakan dengan WIB.
+#
+# Disebut tegas di sini, bukan mengandalkan zona sistem saja: kebanyakan VPS
+# dikirim dengan Etc/UTC, dan kalau itu terlewat, seluruh catatan waktu meleset
+# tujuh jam tanpa ada yang salah secara mencolok -- log pukul 01.48 sebenarnya
+# 08.48, dan baru ketahuan saat ada yang menelusuri kejadian.
+#
+# Zona sistem dan MariaDB juga harus disetel; lihat DOKUMENTASI.md bagian
+# "Zona waktu".
+Environment=TZ=Asia/Jakarta
 ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=5
