@@ -10,30 +10,42 @@
  * terlihat lebih janggal daripada berbeda sekalian.
  */
 
+/**
+ * Palet digeser dari biru bawaan (#2563EB) ke biru tinta yang lebih tua.
+ *
+ * Alasannya bukan selera: #2563EB adalah biru yang sama persis dipakai ratusan
+ * ribu situs karena ia warna bawaan satu kerangka kerja populer, dan sistem
+ * pemerintah daerah yang memakainya langsung terbaca sebagai templat. Biru
+ * tinta memberi kesan resmi tanpa kehilangan keterbacaan.
+ *
+ * Warna status digeser lebih tua dengan alasan berbeda: #F59E0B dan #10B981
+ * terlalu terang untuk teks kecil di atas latar putih. Nilai di bawah semuanya
+ * lulus kontras 4.5:1 pada pasangan bg dan teks masing-masing.
+ */
 :root {
-  --biru-utama: #2563EB;
-  --biru-tua: #1E40AF;
-  --biru-muda: #EFF6FF;
-  --biru-aksen: #3B82F6;
-  --latar: #F0F4F8;
+  --biru-utama: #2E3F7A;
+  --biru-tua: #23305C;
+  --biru-muda: #EEF1F9;
+  --biru-aksen: #4A5FA8;
+  --latar: #F3F5F9;
   --putih: #FFF;
-  --teks-utama: #0F172A;
-  --teks-lemah: #64748B;
-  --garis: #E2E8F0;
-  --proses: #F59E0B;
-  --proses-bg: #FFFBEB;
-  --proses-teks: #92400E;
-  --selesai: #10B981;
-  --selesai-bg: #ECFDF5;
-  --selesai-teks: #065F46;
-  --dikembalikan: #EF4444;
-  --dikembalikan-bg: #FEF2F2;
-  --dikembalikan-teks: #991B1B;
-  --sudut: 12px;
-  --sudut-besar: 16px;
-  --bayang: 0 1px 3px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
-  --bayang-naik: 0 10px 25px -5px rgba(15, 23, 42, .1), 0 8px 10px -6px rgba(15, 23, 42, .06);
-  --bayang-biru: 0 4px 14px rgba(37, 99, 235, .25);
+  --teks-utama: #171B26;
+  --teks-lemah: #626C82;
+  --garis: #E1E6F0;
+  --proses: #D08B1F;
+  --proses-bg: #FBF1DF;
+  --proses-teks: #8A5A11;
+  --selesai: #1B7355;
+  --selesai-bg: #E3F3ED;
+  --selesai-teks: #146143;
+  --dikembalikan: #A13340;
+  --dikembalikan-bg: #FBEEEF;
+  --dikembalikan-teks: #8A2833;
+  --sudut: 10px;
+  --sudut-besar: 12px;
+  --bayang: 0 1px 2px rgba(23, 27, 38, .05), 0 1px 1px rgba(23, 27, 38, .03);
+  --bayang-naik: 0 8px 20px -6px rgba(23, 27, 38, .12), 0 4px 8px -4px rgba(23, 27, 38, .06);
+  --bayang-biru: 0 3px 10px rgba(46, 63, 122, .22);
   --transisi: all .2s cubic-bezier(.4, 0, .2, 1);
 }
 
@@ -92,18 +104,16 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
 
 /* Kepala */
 .kepala {
-  background: linear-gradient(135deg, #1E3A5F 0%, #1E40AF 50%, #2563EB 100%);
+  background: linear-gradient(135deg, #1B2547 0%, #23305C 55%, #2E3F7A 100%);
   position: sticky; top: 0; z-index: 20;
-  box-shadow: 0 4px 20px rgba(30, 64, 175, .15);
+  box-shadow: 0 1px 0 rgba(23, 27, 38, .08);
 }
 .kepala-isi { display: flex; align-items: center; gap: 16px; min-height: 64px; flex-wrap: wrap; }
 .merek { text-decoration: none; color: #FFF; display: flex; align-items: center; gap: 10px; }
-.merek-nama {
-  font-weight: 800; font-size: 20px; letter-spacing: 1px;
-  background: linear-gradient(135deg, #FFF, #93C5FD);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.merek-sub { font-size: 12px; color: rgba(255, 255, 255, .7); font-weight: 500; }
+/* Tanpa gradien teks. Pada layar biasa gradien putih ke biru muda cuma membuat
+   nama mereknya terlihat pudar sebelah, dan huruf putih pekat lebih tegas. */
+.merek-nama { font-weight: 800; font-size: 20px; letter-spacing: 1.5px; color: #FFF; }
+.merek-sub { font-size: 12px; color: rgba(255, 255, 255, .68); font-weight: 500; }
 .nav { display: flex; gap: 4px; margin-left: auto; }
 .nav a {
   padding: 8px 16px; border-radius: 8px; text-decoration: none;
@@ -130,10 +140,7 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
   margin: 0 0 8px;
   font-size: 30px;
   letter-spacing: -.5px;
-  background: linear-gradient(135deg, var(--biru-tua), var(--biru-utama));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--biru-tua);
 }
 .sambutan p {
   margin: 0 auto;
@@ -206,6 +213,25 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
   box-shadow: var(--bayang-naik); border-color: var(--biru-aksen);
   transform: translateY(-2px);
 }
+.kartu-tautan:focus-visible {
+  outline: 2px solid var(--biru-utama); outline-offset: 2px;
+}
+
+/**
+ * Garis status di tepi kiri kartu.
+ *
+ * Bukan hiasan: warnanya menyandikan status, sehingga keadaan sebuah pengajuan
+ * terbaca sebelum mata sampai ke lencana di pojok kanan atas. Lencananya tetap
+ * ada dan tetap bertuliskan katanya, karena warna sendirian tidak cukup bagi
+ * pembaca yang tidak bisa membedakannya.
+ */
+.kartu-status { position: relative; overflow: hidden; padding-left: 24px; }
+.kartu-status::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+}
+.kartu-status.s-proses::before { background: var(--proses); }
+.kartu-status.s-selesai::before { background: var(--selesai); }
+.kartu-status.s-dikembalikan::before { background: var(--dikembalikan); }
 
 /* Kotak hitungan */
 .hitungan { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
@@ -219,8 +245,12 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
 .hitungan-kotak:nth-child(2) { animation-delay: .05s; }
 .hitungan-kotak:nth-child(3) { animation-delay: .1s; }
 .hitungan-kotak:nth-child(4) { animation-delay: .15s; }
-.hitungan-kotak:hover { transform: translateY(-3px); box-shadow: var(--bayang-naik); }
-.hitungan-angka { font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+/* Sengaja tanpa efek hover: kotak hitungan tidak bisa diklik, dan yang
+   bergerak saat disentuh kursor membaca sebagai tombol yang ternyata mati. */
+.hitungan-angka {
+  font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: -1.2px;
+  font-variant-numeric: tabular-nums;
+}
 .hitungan-label {
   font-size: 11px; color: var(--teks-lemah); text-transform: uppercase;
   letter-spacing: .8px; font-weight: 600; margin-top: 4px;
@@ -319,26 +349,137 @@ label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
 
 /* Lencana status */
 .lencana {
-  display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px;
-  border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+  border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap;
+  letter-spacing: .06em;
 }
-.lencana::before { content: '\25CF'; font-size: 8px; }
+.lencana::before { content: '\25CF'; font-size: 7px; }
 .lencana-proses { background: var(--proses-bg); color: var(--proses-teks); }
 .lencana-selesai { background: var(--selesai-bg); color: var(--selesai-teks); }
 .lencana-dikembalikan { background: var(--dikembalikan-bg); color: var(--dikembalikan-teks); }
 
 /* Daftar pengajuan */
 .baris-atas { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+/**
+ * Nomor pengajuan sengaja dibuat tenang: latar biru muda dan huruf tebal
+ * membuatnya bersaing dengan judul, padahal yang dicari mata lebih dulu adalah
+ * judulnya. Nomor baru berguna setelah berkasnya ketemu.
+ */
 .kode {
-  font-family: 'SF Mono', Consolas, monospace; font-size: 13px;
-  color: var(--biru-tua); font-weight: 600; background: var(--biru-muda);
-  padding: 2px 8px; border-radius: 6px;
+  font-family: 'SF Mono', Consolas, monospace; font-size: 11.5px;
+  color: var(--teks-lemah); font-weight: 500; letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
 }
-.judul-pengajuan { font-weight: 700; margin: 0 0 6px; font-size: 15px; line-height: 1.4; }
-.meta { font-size: 13px; color: var(--teks-lemah); font-weight: 500; }
-.terakhir {
-  font-size: 13px; margin-top: 10px; padding-top: 10px;
-  border-top: 1px solid var(--garis); color: var(--teks-lemah);
+.judul-pengajuan {
+  font-weight: 600; margin: 0 0 5px; font-size: 16px;
+  line-height: 1.35; letter-spacing: -.01em; color: var(--teks-utama);
+}
+.meta { font-size: 12.5px; color: var(--teks-lemah); font-weight: 500; }
+
+/**
+ * Rel tahap di kaki kartu. Posisinya dikirim server lewat `tahap_indeks`;
+ * lihat components/JejakTahap.tsx dan server/src/pure/tahap.ts.
+ */
+.jejak { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--garis); }
+.jejak-rel {
+  list-style: none; margin: 0 0 9px; padding: 0;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+}
+.jejak-titik { position: relative; padding-top: 15px; min-width: 0; }
+
+/* Rel penghubung. Satu ruas per stasiun, membentang selebar selnya dan
+   terpusat di titiknya, jadi separuh kiri adalah ruas masuk dan separuh kanan
+   ruas keluar. Ruas pertama dan terakhir dipotong supaya rel tidak menjulur
+   keluar dari titik ujung. */
+.jejak-titik::before {
+  content: ''; position: absolute; top: 4px; left: 0; right: 0;
+  height: 2px; background: var(--garis);
+}
+.jejak-titik:first-child::before { left: 50%; }
+.jejak-titik:last-child::before { right: 50%; }
+.jejak-titik.lewat::before { background: var(--biru-utama); }
+.jejak-titik.kini::before {
+  background: linear-gradient(90deg, var(--biru-utama) 50%, var(--garis) 50%);
+}
+
+.jejak-titik::after {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--putih); border: 2px solid var(--garis);
+}
+.jejak-titik.lewat::after { background: var(--biru-utama); border-color: var(--biru-utama); }
+.jejak-titik.kini::after {
+  background: var(--proses); border-color: var(--proses);
+  box-shadow: 0 0 0 3px var(--proses-bg);
+}
+
+.jejak-label {
+  display: block; text-align: center; font-size: 10px; line-height: 1.3;
+  color: var(--teks-lemah); font-weight: 500;
+}
+.jejak-titik.lewat .jejak-label { color: var(--biru-utama); }
+.jejak-titik.kini .jejak-label { color: var(--teks-utama); font-weight: 700; }
+
+.jejak-catatan {
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: nowrap;
+  margin: 0; font-size: 12.5px; color: var(--teks-lemah);
+}
+.jejak-kabar {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.jejak-hitung { margin-left: auto; font-weight: 600; font-size: 11.5px; white-space: nowrap; }
+
+/* Di halaman detail rel berdiri sendiri di dalam kartunya, jadi garis pemisah
+   atasnya tidak memisahkan apa pun dan hanya menambah satu garis. */
+.jejak-kartu .jejak { margin-top: 0; padding-top: 0; border-top: none; }
+
+/**
+ * Panel kelola riwayat di dashboard.
+ *
+ * Barisnya sengaja tidak dibuat sebagai tabel: tiap baris punya keterangan
+ * berupa kalimat panjang, dan tabel memaksa kalimat itu masuk ke satu sel
+ * sempit yang membungkus di tempat yang salah.
+ */
+.riwayat-sunting { list-style: none; margin: 16px 0 0; padding: 0; }
+.riwayat-sunting > li {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 0; border-top: 1px solid var(--garis);
+}
+.riwayat-sunting > li:last-child { border-bottom: 1px solid var(--garis); }
+.riwayat-isi { flex: 1 1 260px; min-width: 0; }
+.riwayat-kepala {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 0 0 2px;
+}
+.riwayat-tahap { font-weight: 600; font-size: 14px; color: var(--teks-utama); }
+
+/* Nomor stasiun ditulis di sebelah nama tahapnya, bukan disembunyikan di
+   tooltip: inilah satu-satunya tempat hubungan "tahap ini yang mana di rel"
+   bisa terbaca tanpa menebak. */
+.riwayat-stasiun {
+  font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--biru-muda); color: var(--biru-tua);
+}
+.riwayat-keterangan { margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; }
+.riwayat-sunting .tombol-baris { margin-top: 0; flex: 0 0 auto; }
+
+.riwayat-form {
+  padding: 16px; margin-top: 16px;
+  background: var(--latar); border: 1px solid var(--garis); border-radius: var(--sudut);
+}
+.riwayat-form label:first-child { margin-top: 0; }
+.riwayat-sunting .riwayat-form { flex: 1 1 100%; margin-top: 0; }
+
+/* Peringatan yang harus terbaca sebelum tombol Simpan ditekan, bukan sesudah:
+   memilih tahap di luar rel adalah cara paling sering rel jadi kosong. */
+.petunjuk-awas { color: var(--proses-teks); font-weight: 500; }
+
+.tombol-bahaya { color: var(--dikembalikan-teks); border-color: var(--dikembalikan-bg); }
+.tombol-bahaya:hover {
+  background: var(--dikembalikan-bg); color: var(--dikembalikan-teks);
+  border-color: var(--dikembalikan);
 }
 
 /* Lini masa */
@@ -516,12 +657,34 @@ tbody tr:hover { background: var(--biru-muda); }
   }
 
   .kartu { padding: 14px; border-radius: 12px; margin-bottom: 12px; }
-  .judul-pengajuan { font-size: 14px; }
+  .kartu-status { padding-left: 18px; }
+  .judul-pengajuan { font-size: 14.5px; }
   .baris-atas { flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
-  .meta, .terakhir { font-size: 12.5px; }
+  .meta { font-size: 12px; }
+
+  /**
+   * Label stasiun disembunyikan di ponsel, titiknya tetap.
+   *
+   * Enam label di layar 320px menyisakan sekitar 53px per kolom, dan "Pra
+   * Harmonisasi" membungkus jadi dua baris -- relnya sendiri lalu setinggi
+   * judul pengajuan. Titik plus baris "Tahap 4 dari 6" di bawahnya sudah
+   * menyampaikan hal yang sama dengan tinggi seperempatnya.
+   */
+  .jejak { margin-top: 10px; padding-top: 9px; }
+  .jejak-label { display: none; }
+  .jejak-titik { padding-top: 12px; }
+  .jejak-rel { margin-bottom: 7px; }
+  .jejak-catatan { font-size: 12px; }
 
   .tombol-baris { flex-direction: column-reverse; }
   .tombol-baris .tombol { width: 100%; }
+
+  /* Ubah dan Hapus tetap bersanding di ponsel. Keduanya milik satu baris
+     riwayat, dan menumpuknya penuh lebar membuat daftar sepuluh baris jadi
+     dua puluh tombol yang tidak lagi jelas milik baris yang mana. */
+  .riwayat-sunting .tombol-baris { flex-direction: row; width: 100%; }
+  .riwayat-sunting .tombol-baris .tombol { width: auto; flex: 1 1 0; }
+
   .pilihan-jenis, .pilihan-sumber { grid-template-columns: 1fr; }
   .linimasa li { padding: 0 0 18px 24px; }
 

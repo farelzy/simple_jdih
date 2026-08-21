@@ -104,12 +104,20 @@ describe('riwayat dan status', () => {
     expect(detail.body.riwayat[0].keterangan).toBe('Sedang direviu');
   });
 
-  it('tahap di luar daftar baku ditolak', async () => {
+  /**
+   * Uji ini dulu mengharapkan 500, mengunci perilaku yang keliru: salah pilih
+   * tahap itu salah pakai, bukan kerusakan server. Di produksi pesannya
+   * tertelan tangkapGalat dan berubah jadi "Terjadi kesalahan di server",
+   * sehingga admin tidak pernah tahu tahap mana yang ditolak.
+   */
+  it('tahap di luar daftar baku ditolak dengan alasan yang terbaca', async () => {
     const { nomor } = await buatPengajuan();
     const agen = await masuk();
-    await agen.post('/api/admin/riwayat')
+    const r = await agen.post('/api/admin/riwayat')
       .send({ nomor, tanggal: '2026-07-22', tahap: 'NGAWUR', keterangan: '' })
-      .expect(500);
+      .expect(400);
+    expect(r.body.galat).toMatch(/tidak dikenali/i);
+    expect(r.body.galat).not.toMatch(/kesalahan di server/i);
   });
 
   it('DIKEMBALIKAN tanpa alasan ditolak', async () => {
@@ -318,5 +326,241 @@ describe('OPD dan log', () => {
     const baris = r.body.find((b: { aksi: string }) => b.aksi === 'UBAH_STATUS');
     expect(baris).toBeDefined();
     expect(baris.aktor).toBe(EMAIL);
+  });
+});
+
+/**
+ * Mengelola riwayat, bukan sekadar menambahnya.
+ *
+ * Sampai rel enam stasiun muncul di kartu monitoring, dashboard hanya bisa
+ * menambah baris riwayat. Akibatnya satu baris yang tahapnya salah pilih --
+ * LAINNYA padahal isinya pra harmonisasi -- tidak bisa dibetulkan sama sekali,
+ * dan relnya ikut salah selamanya. Di data sungguhan ada 7 dari 37 kartu yang
+ * terkunci begitu.
+ */
+describe('mengelola riwayat', () => {
+  async function buatRiwayat(
+    nomor: string, agen: ReturnType<typeof request.agent>,
+    tahap = 'LAINNYA', tanggal = '2026-07-22'
+  ) {
+    await agen.post('/api/admin/riwayat')
+      .send({ nomor, tanggal, tahap, keterangan: 'Pra harmonisasi di Kanwil' })
+      .expect(200);
+    const p = await pengajuanCariNomor(nomor);
+    const daftar = await riwayatUntuk(p!.id);
+    return daftar[daftar.length - 1]!;
+  }
+
+  it('rute kelola riwayat ikut menolak permintaan tanpa sesi', async () => {
+    await request(app).get('/api/admin/riwayat/BRB-2026-0001').expect(401);
+    await request(app).patch('/api/admin/riwayat/1').send({}).expect(401);
+    await request(app).delete('/api/admin/riwayat/1').expect(401);
+  });
+
+  it('mengirim seluruh riwayat satu pengajuan berikut posisi relnya', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    await buatRiwayat(nomor, agen, 'BERKAS_MASUK');
+    await buatRiwayat(nomor, agen, 'PRA_HARMONISASI', '2026-07-25');
+
+    const r = await agen.get(`/api/admin/riwayat/${nomor}`).expect(200);
+    expect(r.body.nomor).toBe(nomor);
+    expect(r.body.status).toBe('PROSES');
+    expect(r.body.riwayat).toHaveLength(2);
+    expect(r.body.tahap_indeks).toBe(3);
+    expect(r.body.tahap_total).toBe(6);
+    // Tiap baris membawa nomor stasiunnya sendiri, supaya dashboard bisa
+    // menandai baris mana yang sebenarnya tidak menggerakkan rel.
+    expect(r.body.riwayat[0].stasiun).toBe(1);
+    expect(r.body.riwayat[1].stasiun).toBe(3);
+    expect(r.body.riwayat[0].id).toBeGreaterThan(0);
+  });
+
+  it('baris di luar rel dikirim dengan stasiun null', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    await buatRiwayat(nomor, agen, 'LAINNYA');
+
+    const r = await agen.get(`/api/admin/riwayat/${nomor}`).expect(200);
+    expect(r.body.riwayat[0].stasiun).toBeNull();
+    expect(r.body.tahap_indeks).toBe(0);
+  });
+
+  it('nomor yang tidak ada dijawab 404, bukan daftar kosong', async () => {
+    const agen = await masuk();
+    await agen.get('/api/admin/riwayat/BRB-2026-9999').expect(404);
+  });
+
+  /** Inilah yang ditanyakan Bagian Hukum: cara memindahkan titik di rel. */
+  it('mengubah tahap satu baris menggerakkan rel', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    const baris = await buatRiwayat(nomor, agen, 'LAINNYA');
+
+    await agen.patch(`/api/admin/riwayat/${baris.id}`)
+      .send({ tanggal: '2026-07-22', tahap: 'PRA_HARMONISASI', keterangan: 'Pra harmonisasi di Kanwil' })
+      .expect(200);
+
+    const r = await agen.get(`/api/admin/riwayat/${nomor}`).expect(200);
+    expect(r.body.riwayat[0].tahap).toBe('PRA_HARMONISASI');
+    expect(r.body.tahap_indeks).toBe(3);
+
+    // Halaman publik ikut berubah, karena itu yang dilihat OPD.
+    const detail = await request(app).get(`/api/publik/detail/${nomor}`).expect(200);
+    expect(detail.body.tahap_indeks).toBe(3);
+  });
+
+  it('mengubah tanggal dan keterangan sekaligus', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    const baris = await buatRiwayat(nomor, agen, 'REVIU_HUKUM');
+
+    await agen.patch(`/api/admin/riwayat/${baris.id}`)
+      .send({ tanggal: '2026-08-01', tahap: 'REVIU_HUKUM', keterangan: 'Direviu ulang' })
+      .expect(200);
+
+    const r = await agen.get(`/api/admin/riwayat/${nomor}`).expect(200);
+    expect(r.body.riwayat[0].tanggal).toBe('2026-08-01');
+    expect(r.body.riwayat[0].keterangan).toBe('Direviu ulang');
+  });
+
+  it('tahap dan tanggal ngawur ditolak sebagai salah pakai, bukan galat server', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    const baris = await buatRiwayat(nomor, agen, 'REVIU_HUKUM');
+
+    const a = await agen.patch(`/api/admin/riwayat/${baris.id}`)
+      .send({ tanggal: '2026-08-01', tahap: 'NGAWUR', keterangan: '' }).expect(400);
+    expect(a.body.galat).toMatch(/tidak dikenali/i);
+    expect(a.body.galat).not.toMatch(/kesalahan di server/i);
+
+    const b = await agen.patch(`/api/admin/riwayat/${baris.id}`)
+      .send({ tanggal: '01-08-2026', tahap: 'REVIU_HUKUM', keterangan: '' }).expect(400);
+    expect(b.body.galat).toMatch(/tanggal/i);
+
+    // Ditolak berarti tidak tersentuh sama sekali.
+    const r = await agen.get(`/api/admin/riwayat/${nomor}`).expect(200);
+    expect(r.body.riwayat[0].tahap).toBe('REVIU_HUKUM');
+    expect(r.body.riwayat[0].tanggal).toBe('2026-07-22');
+  });
+
+  it('mengubah baris yang tidak ada dijawab 404', async () => {
+    const agen = await masuk();
+    await agen.patch('/api/admin/riwayat/999999')
+      .send({ tanggal: '2026-08-01', tahap: 'REVIU_HUKUM', keterangan: '' }).expect(404);
+  });
+
+  it('menghapus baris memundurkan rel ke stasiun terjauh yang tersisa', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    await buatRiwayat(nomor, agen, 'BERKAS_MASUK');
+    const salah = await buatRiwayat(nomor, agen, 'RAPAT_HARMONISASI', '2026-07-25');
+
+    await agen.delete(`/api/admin/riwayat/${salah.id}`).expect(200);
+
+    const r = await agen.get(`/api/admin/riwayat/${nomor}`).expect(200);
+    expect(r.body.riwayat).toHaveLength(1);
+    expect(r.body.tahap_indeks).toBe(1);
+  });
+
+  it('menghapus baris yang tidak ada dijawab 404', async () => {
+    const agen = await masuk();
+    await agen.delete('/api/admin/riwayat/999999').expect(404);
+  });
+
+  it('ubah dan hapus tercatat di log audit berikut tahap sebelumnya', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    const baris = await buatRiwayat(nomor, agen, 'LAINNYA');
+
+    await agen.patch(`/api/admin/riwayat/${baris.id}`)
+      .send({ tanggal: '2026-07-22', tahap: 'PRA_HARMONISASI', keterangan: '' }).expect(200);
+    await agen.delete(`/api/admin/riwayat/${baris.id}`).expect(200);
+
+    const log = await agen.get('/api/admin/log?jumlah=20').expect(200);
+    const ubah = log.body.find((b: { aksi: string }) => b.aksi === 'UBAH_RIWAYAT');
+    const hapus = log.body.find((b: { aksi: string }) => b.aksi === 'HAPUS_RIWAYAT');
+
+    expect(ubah).toBeDefined();
+    expect(ubah.aktor).toBe(EMAIL);
+    // Tanpa tahap lama di rincian, log tidak bisa menjawab "dulu isinya apa".
+    expect(ubah.rincian).toMatch(/LAINNYA/);
+    expect(ubah.rincian).toMatch(/PRA_HARMONISASI/);
+    expect(hapus).toBeDefined();
+    expect(hapus.rincian).toMatch(/PRA_HARMONISASI/);
+  });
+});
+
+describe('bekal dashboard untuk formulir riwayat', () => {
+  it('mengirim daftar stasiun dan pemetaan tahap ke stasiun', async () => {
+    const agen = await masuk();
+    const r = await agen.get('/api/admin/data').expect(200);
+
+    expect(r.body.stasiun.map((s: { kunci: string }) => s.kunci)).toEqual([
+      'BERKAS_MASUK', 'REVIU_HUKUM', 'PRA_HARMONISASI',
+      'FASILITASI', 'RAPAT_HARMONISASI', 'SELESAI_HARMONISASI'
+    ]);
+    expect(r.body.tahapStasiun.PRA_HARMONISASI).toBe(3);
+    expect(r.body.tahapStasiun.LAINNYA).toBeNull();
+  });
+
+  /**
+   * Antrean sengaja hanya memuat PROSES. Tapi berkas yang paling butuh
+   * dibetulkan relnya justru yang sudah SELESAI atau DIKEMBALIKAN, dan
+   * sebelumnya keduanya sama sekali tidak bisa disentuh dari dashboard.
+   */
+  it('mengirim seluruh pengajuan, bukan hanya yang berstatus PROSES', async () => {
+    const { nomor } = await buatPengajuan('Sudah selesai');
+    const agen = await masuk();
+    await agen.post('/api/admin/status').send({ nomor, status: 'SELESAI', alasan: '' }).expect(200);
+
+    const r = await agen.get('/api/admin/data').expect(200);
+    expect(r.body.antrean).toHaveLength(0);
+    expect(r.body.daftar.map((p: { nomor: string }) => p.nomor)).toContain(nomor);
+    expect(r.body.daftar[0].status).toBe('SELESAI');
+  });
+});
+
+/**
+ * Rel ikut dikirim di daftar antrean, bukan hanya di halaman publik.
+ *
+ * Dua sebabnya. Pertama, dashboard perlu menggambar rel yang sama persis
+ * dengan yang dilihat OPD, supaya Bagian Hukum tahu apa yang sedang dibaca
+ * orang luar. Kedua, tombol "Ubah tahap" perlu tahu posisi sekarang untuk
+ * memilihkan pilihan awal dan untuk memperingatkan kalau tahap yang dipilih
+ * lebih awal daripada yang sudah tercapai -- rel memakai stasiun terjauh, jadi
+ * pilihan mundur tidak akan menggerakkan apa pun.
+ */
+describe('posisi rel di daftar dashboard', () => {
+  it('tiap baris antrean membawa posisi rel dan kejadian terakhirnya', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    await agen.post('/api/admin/riwayat')
+      .send({ nomor, tanggal: '2026-07-22', tahap: 'PRA_HARMONISASI', keterangan: 'Di Kanwil' })
+      .expect(200);
+
+    const r = await agen.get('/api/admin/data').expect(200);
+    const baris = r.body.antrean.find((p: { nomor: string }) => p.nomor === nomor);
+    expect(baris.tahap_indeks).toBe(3);
+    expect(baris.tahap_total).toBe(6);
+    expect(baris.terakhir).toBe('Di Kanwil');
+  });
+
+  it('pengajuan tanpa riwayat berada di stasiun nol, bukan tanpa kolom', async () => {
+    await buatPengajuan();
+    const agen = await masuk();
+    const r = await agen.get('/api/admin/data').expect(200);
+    expect(r.body.antrean[0].tahap_indeks).toBe(0);
+    expect(r.body.antrean[0].terakhir).toBe('');
+  });
+
+  it('status SELESAI memenuhi rel di daftar, sama seperti di halaman publik', async () => {
+    const { nomor } = await buatPengajuan();
+    const agen = await masuk();
+    await agen.post('/api/admin/status').send({ nomor, status: 'SELESAI', alasan: '' }).expect(200);
+
+    const r = await agen.get('/api/admin/data').expect(200);
+    const baris = r.body.daftar.find((p: { nomor: string }) => p.nomor === nomor);
+    expect(baris.tahap_indeks).toBe(6);
   });
 });

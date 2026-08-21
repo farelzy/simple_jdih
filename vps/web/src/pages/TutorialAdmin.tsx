@@ -91,10 +91,36 @@ export function TutorialAdmin() {
           sedang menunggu pihak lain.
         </p>
 
-        <h3>Tambah riwayat</h3>
+        <h3>Mencari pengajuan yang tidak ada di antrean</h3>
         <p className="petunjuk">
-          Inilah tombol yang paling sering dipakai. Setiap kali ada perkembangan, catat di
-          sini: pilih <strong>tahap</strong>, isi <strong>tanggal</strong> kejadiannya (bukan
+          Kotak cari di atas daftar menjangkau <strong>seluruh pengajuan</strong>, termasuk
+          yang sudah SELESAI atau DIKEMBALIKAN dan karena itu tidak muncul di antrean. Ketik
+          nomor, judul, atau nama OPD. Kosongkan lagi untuk kembali ke antrean.
+        </p>
+
+        <h3>Ubah tahap &mdash; cara tercepat memindahkan titik</h3>
+        <p className="petunjuk">
+          Tombol biru di tiap kartu. Isinya satu pilihan berisi enam tahap, dari
+          <strong> 1. Masuk</strong> sampai <strong>6. Selesai</strong>. Pilih yang sekarang
+          sudah dicapai, isi tanggal kejadiannya, simpan &mdash; titik di kartu langsung
+          pindah. Keterangan boleh dikosongkan, tapi kalau diisi, kalimat itulah yang dibaca
+          OPD di lini masa.
+        </p>
+        <p className="petunjuk">
+          Yang tersimpan tetap satu baris riwayat, jadi tidak ada dua catatan yang bisa saling
+          bertentangan. Formulir ini hanya memendekkan jalannya.
+        </p>
+        <p className="petunjuk">
+          Kalau tahap yang dipilih <strong>lebih awal</strong> dari posisi sekarang, akan muncul
+          peringatan bahwa titiknya tidak akan bergerak. Itu bukan kerusakan: rel memakai stasiun
+          terjauh yang pernah dicapai, bukan catatan terakhir. Untuk memundurkan atau membetulkan
+          yang terlanjur salah, pakai <strong>Kelola riwayat</strong>.
+        </p>
+
+        <h3>Kelola riwayat &mdash; untuk membetulkan dan mencatat yang di luar rel</h3>
+        <p className="petunjuk">
+          Tombol yang paling sering dipakai. Setiap kali ada perkembangan, catat di sini:
+          pilih <strong>tahap</strong>, isi <strong>tanggal</strong> kejadiannya (bukan
           tanggal Anda mengetik), dan tulis <strong>keterangan</strong> dengan kalimat yang
           bisa dibaca pemohon.
         </p>
@@ -102,9 +128,67 @@ export function TutorialAdmin() {
           Riwayat inilah yang muncul sebagai lini masa di halaman publik. Kalau tidak ada
           yang mencatat, pemohon menelepon &mdash; dan itu yang hendak dikurangi sistem ini.
         </p>
+
+        <h3>Rel enam titik di kartu monitoring</h3>
         <p className="petunjuk">
-          Pilih tahap <strong>Lainnya</strong> bila tidak ada yang cocok; keterangannya tetap
-          tampil utuh.
+          Deretan titik <em>Masuk &rarr; Reviu &rarr; Pra Harmonisasi &rarr; Fasilitasi &rarr;
+          Rapat &rarr; Selesai</em> di kaki tiap kartu <strong>tidak disetel langsung</strong>.
+          Tidak ada tombol untuk menggesernya. Posisinya dihitung sendiri oleh sistem dari
+          baris riwayat yang sudah Anda catat.
+        </p>
+        <p className="petunjuk">Aturannya tiga, dan hanya tiga:</p>
+        <ul className="poin">
+          <li>
+            Titik yang menyala adalah <strong>stasiun terjauh</strong> yang pernah disentuh,
+            bukan baris yang terakhir dicatat. Jadi mencatat kejadian lama menyusul tidak
+            akan memundurkan rel.
+          </li>
+          <li>
+            Hanya enam tahap yang ada di rel. Di formulir, keenamnya dikelompokkan di bawah
+            judul <strong>&ldquo;Menggerakkan rel&rdquo;</strong> dan diberi nomor stasiun.
+            Tahap di kelompok bawah &mdash; Lainnya, Perbaikan, Dikembalikan &mdash; tetap
+            tersimpan dan tetap tampil ke pemohon, tapi <strong>tidak memajukan titik</strong>.
+          </li>
+          <li>
+            Pengajuan berstatus <strong>SELESAI</strong> relnya selalu ditampilkan penuh,
+            apa pun isi riwayatnya.
+          </li>
+        </ul>
+        <p className="petunjuk">
+          Jadi kalau sebuah kartu menulis &ldquo;Tahap 1 dari 6&rdquo; padahal berkasnya jelas
+          sudah sampai pra harmonisasi, penyebabnya hampir selalu satu: baris riwayatnya
+          bertahap <strong>Lainnya</strong>. Ada dua cara membereskannya, dan pilih menurut
+          maksudnya:
+        </p>
+        <ul className="poin">
+          <li>
+            <strong>Ubah tahap</strong> kalau catatan lamanya memang benar dan Anda cuma ingin
+            titiknya maju. Menambah satu baris baru, yang lama tetap utuh.
+          </li>
+          <li>
+            <strong>Kelola riwayat &rarr; Ubah</strong> kalau baris lamanya yang salah pilih
+            tahap. Membetulkan di tempat, tidak menambah catatan baru.
+          </li>
+        </ul>
+
+        <h3>Membetulkan dan menghapus baris</h3>
+        <p className="petunjuk">
+          Di dalam <strong>Kelola riwayat</strong>, tiap baris punya tombol <strong>Ubah</strong>
+          dan <strong>Hapus</strong>. Ubah untuk membetulkan tahap, tanggal, atau keterangan
+          yang salah ketik. Hapus hanya untuk baris yang memang tidak pernah terjadi &mdash;
+          bukan untuk kejadian yang batal, karena pembatalan itu sendiri kabar yang perlu
+          dibaca pemohon; catat sebagai baris baru saja.
+        </p>
+        <p className="petunjuk">
+          Keduanya tercatat di tab <strong>Log</strong> lengkap dengan tahap sebelumnya, jadi
+          selalu ada jejak isi lama sebuah baris. Baris yang sudah dihapus tidak bisa
+          dikembalikan sendiri; pemulihannya lewat cadangan harian.
+        </p>
+        <p className="petunjuk">
+          Pilih tahap <strong>Lainnya</strong> hanya bila kejadiannya memang di luar keenam
+          stasiun &mdash; misalnya konsultasi atau surat menyurat. Kalau kejadiannya
+          sebenarnya salah satu stasiun, pilih stasiunnya, supaya rel di halaman publik tidak
+          tertinggal dari kenyataan.
         </p>
 
         <h3>Ubah status</h3>
@@ -402,7 +486,11 @@ export function TutorialAdmin() {
         <h3>Setiap hari kerja</h3>
         <ol className="poin">
           <li>Buka tab <strong>Antrean</strong>. Kerjakan dari atas &mdash; yang paling lama tidak tersentuh.</li>
-          <li>Untuk tiap pengajuan yang ada perkembangannya, <strong>Tambah riwayat</strong>.</li>
+          <li>
+            Untuk tiap pengajuan yang ada perkembangannya, buka <strong>Kelola riwayat</strong> lalu
+            tambah barisnya. Pilih tahap dari kelompok &ldquo;Menggerakkan rel&rdquo; kalau berkasnya
+            memang maju satu stasiun &mdash; itu yang membuat titik di kartu ikut berpindah.
+          </li>
           <li>Perhatikan yang bertanda &ldquo;Tidak bergerak&rdquo;. Kalau memang menunggu pihak lain, catat itu sebagai riwayat supaya pemohon tahu.</li>
           <li>Tandai <strong>SELESAI</strong> begitu rampung, supaya antrean tetap mencerminkan pekerjaan nyata.</li>
         </ol>

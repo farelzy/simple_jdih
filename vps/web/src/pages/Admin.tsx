@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { panggilApi } from '../lib/api';
 import { formatTanggal, formatUkuran, labelTahap } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
+import { JejakTahap } from '../components/JejakTahap';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { KolomSandi } from '../components/KolomSandi';
 import { Pulihkan } from '../components/Pulihkan';
@@ -13,11 +14,18 @@ import {
 
 interface BarisAntrean {
   nomor: string; judul: string; opd: string; status: string;
-  masuk: string; diperbarui: string; mandek: boolean;
+  masuk: string; diperbarui: string; mandek?: boolean;
+  /** keterangan kejadian terakhir, untuk baris di bawah rel */
+  terakhir: string;
+  /** posisi rel yang sama persis dengan yang dilihat OPD di halaman monitoring */
+  tahap_indeks: number;
+  tahap_total: number;
 }
 interface DataAdmin {
   emailSaya: string;
   antrean: BarisAntrean[];
+  /** seluruh pengajuan, termasuk SELESAI dan DIKEMBALIKAN yang tidak masuk antrean */
+  daftar: BarisAntrean[];
   rekap: {
     status: { TOTAL: number; PROSES: number; SELESAI: number; DIKEMBALIKAN: number };
     opd: { opd: string; jumlah: number }[];
@@ -30,7 +38,29 @@ interface DataAdmin {
   admin: { id: number; email: string; nama: string }[];
   alasanKembali: string[];
   tahap: string[];
+  /** enam stasiun rel, urutannya sama dengan yang digambar JejakTahap */
+  stasiun: { kunci: string; label: string }[];
+  /** tahap -> nomor stasiun, null bila tahap itu tidak menggerakkan rel */
+  tahapStasiun: Record<string, number | null>;
   status: string[];
+}
+
+interface BarisRiwayat {
+  id: number;
+  tanggal: string;
+  tahap: string;
+  keterangan: string;
+  dicatat_oleh: string;
+  stasiun: number | null;
+}
+
+interface DataRiwayat {
+  nomor: string;
+  judul: string;
+  status: string;
+  riwayat: BarisRiwayat[];
+  tahap_indeks: number;
+  tahap_total: number;
 }
 
 const TAB = ['antrean', 'rekap', 'opd', 'admin', 'pengaturan', 'cadangan', 'migrasi', 'log'] as const;
@@ -120,20 +150,48 @@ type Aksi = (jalur: string, badan: unknown, sukses: string, metode?: string) => 
 /* ---------- Antrean ---------- */
 
 function Antrean({ data, aksi }: { data: DataAdmin; aksi: Aksi }) {
-  const [buka, setBuka] = useState<{ nomor: string; jenis: 'riwayat' | 'status' } | null>(null);
+  const [buka, setBuka] = useState<{ nomor: string; jenis: 'riwayat' | 'status' | 'tahap' } | null>(null);
+  const [cari, setCari] = useState('');
 
-  if (!data.antrean.length) {
-    return <div className="kartu"><p className="petunjuk">Tidak ada pengajuan berstatus PROSES.</p></div>;
-  }
+  // Kotak cari sengaja beralih ke daftar penuh, bukan menyaring antrean.
+  // Berkas yang paling butuh dibetulkan relnya justru yang sudah SELESAI atau
+  // DIKEMBALIKAN, dan keduanya memang tidak pernah muncul di antrean.
+  const kunci = cari.trim().toLowerCase();
+  const mencari = kunci.length > 0;
+  const tampil = mencari
+    ? data.daftar.filter((p) =>
+      `${p.nomor} ${p.judul} ${p.opd}`.toLowerCase().includes(kunci))
+    : data.antrean;
 
   return (
     <>
+      <div className="saringan">
+        <input
+          type="search"
+          placeholder="Cari nomor, judul, atau OPD di seluruh pengajuan…"
+          value={cari}
+          onChange={(e) => { setCari(e.target.value); setBuka(null); }}
+        />
+      </div>
+
       <p className="petunjuk">
-        Diurutkan dari yang paling lama tidak diperbarui. Yang bertanda tidak bergerak
-        melewati {data.pengaturan.ambang_mandek_hari ?? 7} hari.
+        {mencari
+          ? `${tampil.length} dari ${data.daftar.length} pengajuan, semua status.`
+          : `Antrean PROSES, diurutkan dari yang paling lama tidak diperbarui. Yang bertanda
+             tidak bergerak melewati ${data.pengaturan.ambang_mandek_hari ?? 7} hari. Kosongkan
+             pencarian untuk kembali ke sini; cari untuk menjangkau pengajuan yang sudah
+             selesai atau dikembalikan.`}
       </p>
 
-      {data.antrean.map((p) => (
+      {!tampil.length && (
+        <div className="kartu">
+          <p className="petunjuk">
+            {mencari ? 'Tidak ada pengajuan yang cocok.' : 'Tidak ada pengajuan berstatus PROSES.'}
+          </p>
+        </div>
+      )}
+
+      {tampil.map((p) => (
         <div key={p.nomor} className="kartu">
           <div className="baris-atas">
             <span className="kode">{p.nomor}</span>
@@ -144,21 +202,32 @@ function Antrean({ data, aksi }: { data: DataAdmin; aksi: Aksi }) {
           <p className="judul-pengajuan">{p.judul}</p>
           <p className="meta">{p.opd} &middot; diperbarui {formatTanggal(p.diperbarui)}</p>
 
+          {/* Rel yang sama persis dengan yang dilihat OPD di halaman monitoring.
+              Tanpa ini Bagian Hukum mengubah sesuatu yang tidak pernah mereka
+              lihat hasilnya, dan baru sadar kelirunya dari telepon. */}
+          <JejakTahap indeks={p.tahap_indeks} total={p.tahap_total} catatan={p.terakhir} />
+
           <div className="tombol-baris">
             <Link className="tombol" to={`/detail/${p.nomor}`}>Lihat</Link>
             <button className="tombol" onClick={() => setBuka({ nomor: p.nomor, jenis: 'status' })}>
               Ubah status
             </button>
-            <button className="tombol tombol-utama" onClick={() => setBuka({ nomor: p.nomor, jenis: 'riwayat' })}>
-              Tambah riwayat
+            <button className="tombol" onClick={() => setBuka({ nomor: p.nomor, jenis: 'riwayat' })}>
+              Kelola riwayat
+            </button>
+            <button className="tombol tombol-utama" onClick={() => setBuka({ nomor: p.nomor, jenis: 'tahap' })}>
+              Ubah tahap
             </button>
           </div>
 
           {buka?.nomor === p.nomor && buka.jenis === 'riwayat' && (
-            <FormRiwayat data={data} nomor={p.nomor} tutup={() => setBuka(null)} aksi={aksi} />
+            <PanelRiwayat data={data} nomor={p.nomor} tutup={() => setBuka(null)} aksi={aksi} />
           )}
           {buka?.nomor === p.nomor && buka.jenis === 'status' && (
-            <FormStatus data={data} nomor={p.nomor} tutup={() => setBuka(null)} aksi={aksi} />
+            <FormStatus data={data} nomor={p.nomor} sekarang={p.status} tutup={() => setBuka(null)} aksi={aksi} />
+          )}
+          {buka?.nomor === p.nomor && buka.jenis === 'tahap' && (
+            <FormTahap data={data} baris={p} tutup={() => setBuka(null)} aksi={aksi} />
           )}
         </div>
       ))}
@@ -166,23 +235,289 @@ function Antrean({ data, aksi }: { data: DataAdmin; aksi: Aksi }) {
   );
 }
 
-function FormRiwayat(
-  { data, nomor, tutup, aksi }: { data: DataAdmin; nomor: string; tutup: () => void; aksi: Aksi }
+/* ---------- Ubah tahap ---------- */
+
+/**
+ * Jalan tercepat memindahkan titik di rel: satu dropdown enam pilihan.
+ *
+ * Ini yang ditanyakan Bagian Hukum, dan jawaban jujurnya dulu berbelit --
+ * "tambah baris riwayat dengan tahap yang benar". Formulir ini menyembunyikan
+ * kalimat itu tanpa berbohong: yang disimpan tetap satu baris riwayat, jadi
+ * lini masa publik tetap terisi dan tidak ada mekanisme kedua yang harus
+ * dijaga tetap sepakat dengan yang pertama.
+ *
+ * Kelola riwayat tetap ada untuk yang tidak bisa dilakukan dari sini:
+ * membetulkan baris lama, menghapusnya, dan mencatat kejadian di luar rel.
+ */
+function FormTahap(
+  { data, baris, tutup, aksi }: {
+    data: DataAdmin; baris: BarisAntrean; tutup: () => void; aksi: Aksi
+  }
 ) {
-  const [tahap, setTahap] = useState(data.tahap[0] ?? 'BERKAS_MASUK');
+  const kini = baris.tahap_indeks;
+  const [pilih, setPilih] = useState(Math.min(Math.max(kini, 1), data.stasiun.length));
   const [tanggal, setTanggal] = useState(hariIniIso());
   const [keterangan, setKeterangan] = useState('');
   const [sibuk, setSibuk] = useState(false);
 
+  const stasiun = data.stasiun[pilih - 1];
+  // Rel memakai stasiun terjauh, jadi memilih yang lebih awal tidak akan
+  // memundurkan titik. Diperingatkan sebelum Simpan ditekan, bukan sesudah:
+  // kalau baru ketahuan sesudah, yang tertinggal adalah baris riwayat yang
+  // tidak diinginkan dan harus dihapus lewat panel lain.
+  const takBergerak = pilih <= kini;
+
   return (
-    <div className="kartu" style={{ marginTop: 16 }}>
-      <h3>Tambah riwayat</h3>
+    <div className="kartu jejak-kartu" style={{ marginTop: 16 }}>
+      <h3 style={{ marginTop: 0 }}>Ubah tahap</h3>
+      <JejakTahap indeks={kini} total={baris.tahap_total} />
+
       <label>
-        Tahap
-        <select value={tahap} onChange={(e) => setTahap(e.target.value)}>
-          {data.tahap.map((t) => <option key={t} value={t}>{labelTahap(t)}</option>)}
+        Sudah sampai tahap
+        <select value={pilih} onChange={(e) => setPilih(Number(e.target.value))}>
+          {data.stasiun.map((s, i) => (
+            <option key={s.kunci} value={i + 1}>{i + 1}. {s.label}</option>
+          ))}
         </select>
       </label>
+      <p className={`petunjuk ${takBergerak ? 'petunjuk-awas' : ''}`}>
+        {kini === 0
+          ? `Rel masih kosong. Menyimpan ini membawanya ke ${stasiun?.label}.`
+          : takBergerak
+            ? `Rel sudah di stasiun ${kini}, jadi memilih ${stasiun?.label} tidak akan `
+              + 'memindahkan titiknya -- posisinya diambil dari stasiun terjauh, bukan dari '
+              + 'catatan terakhir. Kalau maksudnya membetulkan catatan yang salah, tutup ini '
+              + 'lalu pakai Kelola riwayat.'
+            : `Titiknya pindah dari stasiun ${kini} ke ${pilih}, yaitu ${stasiun?.label}.`}
+      </p>
+
+      <label>
+        Tanggal kejadian
+        <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+      </label>
+      <label>
+        Keterangan
+        <textarea
+          rows={2}
+          placeholder="Boleh dikosongkan. Kalau diisi, kalimat ini yang dibaca OPD di lini masa."
+          value={keterangan}
+          onChange={(e) => setKeterangan(e.target.value)}
+        />
+      </label>
+
+      <div className="tombol-baris">
+        <button className="tombol" onClick={tutup}>Batal</button>
+        <button className="tombol tombol-utama" disabled={sibuk} onClick={async () => {
+          setSibuk(true);
+          const ok = await aksi(
+            '/api/admin/riwayat',
+            { nomor: baris.nomor, tahap: stasiun?.kunci, tanggal, keterangan },
+            `Tahap dicatat: ${stasiun?.label}.`
+          );
+          setSibuk(false);
+          if (ok) tutup();
+        }}>
+          {sibuk ? 'Menyimpan…' : 'Simpan tahap'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Kelola riwayat ---------- */
+
+/**
+ * Satu tempat untuk menjawab pertanyaan Bagian Hukum: bagaimana memindahkan
+ * titik di rel dari Masuk ke Reviu, Pra Harmonisasi, dan seterusnya.
+ *
+ * Jawabannya tidak pernah "geser titiknya", karena rel bukan sesuatu yang bisa
+ * disetel sendiri: posisinya dihitung dari baris riwayat. Panel ini yang
+ * membuat hubungan itu terlihat -- relnya digambar tepat di atas daftar
+ * barisnya, dan tiap baris menyebutkan stasiun mana yang ia sentuh.
+ */
+function PanelRiwayat(
+  { data, nomor, tutup, aksi }: { data: DataAdmin; nomor: string; tutup: () => void; aksi: Aksi }
+) {
+  const [isi, setIsi] = useState<DataRiwayat | null>(null);
+  const [galat, setGalat] = useState('');
+  const [ubah, setUbah] = useState<number | null>(null);
+  const [tambah, setTambah] = useState(false);
+  const [sibuk, setSibuk] = useState(false);
+
+  const muat = useCallback(async () => {
+    try {
+      setIsi(await panggilApi<DataRiwayat>(`/api/admin/riwayat/${nomor}`));
+      setGalat('');
+    } catch (e) { setGalat((e as Error).message); }
+  }, [nomor]);
+
+  useEffect(() => { void muat(); }, [muat]);
+
+  async function jalankan(jalur: string, badan: unknown, pesan: string, metode: string) {
+    setSibuk(true);
+    const ok = await aksi(jalur, badan, pesan, metode);
+    setSibuk(false);
+    if (ok) { setUbah(null); setTambah(false); await muat(); }
+    return ok;
+  }
+
+  if (galat) {
+    return <div className="kartu kartu-peringatan" style={{ marginTop: 16 }}><p className="galat">{galat}</p></div>;
+  }
+  if (!isi) return <p className="petunjuk">Memuat riwayat&hellip;</p>;
+
+  return (
+    <div className="kartu jejak-kartu" style={{ marginTop: 16 }}>
+      <h3 style={{ marginTop: 0 }}>Kelola riwayat</h3>
+
+      <JejakTahap indeks={isi.tahap_indeks} total={isi.tahap_total} />
+
+      <p className="petunjuk">
+        Rel di atas bukan sesuatu yang digeser langsung. Posisinya diambil dari stasiun
+        terjauh yang pernah disentuh baris riwayat di bawah, jadi cara memajukannya adalah
+        menambah baris dengan tahap stasiun berikutnya, atau membetulkan tahap baris yang
+        terlanjur salah pilih.
+      </p>
+
+      {isi.status === 'SELESAI' && (
+        <p className="petunjuk">
+          Pengajuan ini berstatus SELESAI, jadi relnya ditampilkan penuh apa pun isi
+          riwayatnya. Ubah statusnya dulu kalau itu keliru.
+        </p>
+      )}
+
+      {!isi.riwayat.length && <p className="petunjuk">Belum ada satu pun baris riwayat.</p>}
+
+      <ul className="riwayat-sunting">
+        {isi.riwayat.map((r) => (
+          <li key={r.id}>
+            {ubah === r.id ? (
+              <FormBaris
+                data={data}
+                awal={r}
+                label="Simpan perubahan"
+                sibuk={sibuk}
+                batal={() => setUbah(null)}
+                simpan={(b) => jalankan(`/api/admin/riwayat/${r.id}`, b, 'Riwayat diperbarui.', 'PATCH')}
+              />
+            ) : (
+              <>
+                <div className="riwayat-isi">
+                  <p className="riwayat-kepala">
+                    <span className="riwayat-tahap">{labelTahap(r.tahap)}</span>
+                    <span className="riwayat-stasiun">
+                      {r.stasiun === null
+                        ? 'tidak menggerakkan rel'
+                        : `stasiun ${r.stasiun} dari ${isi.tahap_total}`}
+                    </span>
+                  </p>
+                  <p className="meta">{formatTanggal(r.tanggal)} &middot; {r.dicatat_oleh}</p>
+                  {r.keterangan && <p className="riwayat-keterangan">{r.keterangan}</p>}
+                </div>
+                <div className="tombol-baris">
+                  <button className="tombol" disabled={sibuk} onClick={() => { setTambah(false); setUbah(r.id); }}>
+                    Ubah
+                  </button>
+                  <button className="tombol tombol-bahaya" disabled={sibuk} onClick={() => {
+                    const setuju = window.confirm(
+                      `Hapus baris "${labelTahap(r.tahap)}" tanggal ${formatTanggal(r.tanggal)}?\n\n`
+                      + 'Baris yang dihapus tidak bisa dikembalikan, dan rel bisa mundur '
+                      + 'kalau baris ini yang paling jauh.'
+                    );
+                    if (setuju) void jalankan(`/api/admin/riwayat/${r.id}`, null, 'Riwayat dihapus.', 'DELETE');
+                  }}>
+                    Hapus
+                  </button>
+                </div>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {tambah ? (
+        <FormBaris
+          data={data}
+          awal={{ tanggal: hariIniIso(), tahap: sesudah(data, isi), keterangan: '' }}
+          label="Tambah baris"
+          sibuk={sibuk}
+          batal={() => setTambah(false)}
+          simpan={(b) => jalankan('/api/admin/riwayat', { nomor, ...b }, 'Riwayat ditambahkan.', 'POST')}
+        />
+      ) : (
+        <div className="tombol-baris">
+          <button className="tombol" onClick={tutup}>Tutup</button>
+          <button className="tombol tombol-utama" onClick={() => { setUbah(null); setTambah(true); }}>
+            Tambah riwayat
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Tahap yang paling mungkin dimaksud saat menambah baris: stasiun sesudah
+ * posisi rel sekarang. Menebak begini menghemat satu langkah pada jalur yang
+ * paling sering ditempuh, yaitu memajukan berkas satu stasiun.
+ */
+function sesudah(data: DataAdmin, isi: DataRiwayat): string {
+  const berikut = data.stasiun[Math.min(isi.tahap_indeks, data.stasiun.length - 1)];
+  return berikut?.kunci ?? data.tahap[0] ?? 'BERKAS_MASUK';
+}
+
+function FormBaris(
+  { data, awal, label, sibuk, batal, simpan }: {
+    data: DataAdmin;
+    awal: { tanggal: string; tahap: string; keterangan: string };
+    label: string;
+    sibuk: boolean;
+    batal: () => void;
+    simpan: (badan: { tanggal: string; tahap: string; keterangan: string }) => Promise<boolean>;
+  }
+) {
+  const [tahap, setTahap] = useState(awal.tahap);
+  const [tanggal, setTanggal] = useState(awal.tanggal);
+  const [keterangan, setKeterangan] = useState(awal.keterangan);
+
+  const stasiun = data.tahapStasiun[tahap] ?? null;
+  // Diurutkan menurut nomor stasiun, bukan menurut urutan di skema. Urutan
+  // skema menampilkan 1, 2, 3, 5, 6, 4 karena Fasilitasi ditulis belakangan di
+  // sana, dan daftar bernomor yang meloncat terbaca seperti salah cetak.
+  const diRel = data.tahap
+    .filter((t) => data.tahapStasiun[t] != null)
+    .sort((a, b) => (data.tahapStasiun[a] ?? 0) - (data.tahapStasiun[b] ?? 0));
+  const luarRel = data.tahap.filter((t) => data.tahapStasiun[t] == null);
+
+  return (
+    <div className="riwayat-form">
+      <label>
+        Tahap
+        {/* Dikelompokkan, bukan satu daftar rata. Tanpa pemisahan ini LAINNYA
+            terlihat sama sahnya dengan Pra Harmonisasi, dan itulah sebab 7 dari
+            37 kartu di data sungguhan relnya kosong padahal berkasnya jalan. */}
+        <select value={tahap} onChange={(e) => setTahap(e.target.value)}>
+          <optgroup label="Menggerakkan rel">
+            {diRel.map((t) => (
+              <option key={t} value={t}>
+                {data.tahapStasiun[t]}. {labelTahap(t)}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Tidak menggerakkan rel">
+            {luarRel.map((t) => <option key={t} value={t}>{labelTahap(t)}</option>)}
+          </optgroup>
+        </select>
+      </label>
+      <p className={`petunjuk ${stasiun === null ? 'petunjuk-awas' : ''}`}>
+        {stasiun === null
+          ? 'Tahap ini tidak ada di rel, jadi titik di kartu tidak akan bergerak. '
+            + 'Pilih tahap dari kelompok atas kalau maksudnya memajukan berkas.'
+          : `Membawa rel sampai stasiun ${stasiun} dari ${data.stasiun.length}, `
+            + `yaitu ${data.stasiun[stasiun - 1]?.label}. Rel tidak pernah mundur karena `
+            + 'baris baru: yang dipakai adalah stasiun terjauh.'}
+      </p>
+
       <label>
         Tanggal
         <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
@@ -192,14 +527,11 @@ function FormRiwayat(
         <textarea rows={3} value={keterangan} onChange={(e) => setKeterangan(e.target.value)} />
       </label>
       <div className="tombol-baris">
-        <button className="tombol" onClick={tutup}>Batal</button>
-        <button className="tombol tombol-utama" disabled={sibuk} onClick={async () => {
-          setSibuk(true);
-          const ok = await aksi('/api/admin/riwayat', { nomor, tahap, tanggal, keterangan }, 'Riwayat ditambahkan.');
-          setSibuk(false);
-          if (ok) tutup();
+        <button className="tombol" onClick={batal}>Batal</button>
+        <button className="tombol tombol-utama" disabled={sibuk} onClick={() => {
+          void simpan({ tanggal, tahap, keterangan });
         }}>
-          {sibuk ? 'Menyimpan…' : 'Simpan'}
+          {sibuk ? 'Menyimpan…' : label}
         </button>
       </div>
     </div>
@@ -207,9 +539,16 @@ function FormRiwayat(
 }
 
 function FormStatus(
-  { data, nomor, tutup, aksi }: { data: DataAdmin; nomor: string; tutup: () => void; aksi: Aksi }
+  { data, nomor, sekarang, tutup, aksi }: {
+    data: DataAdmin; nomor: string; sekarang: string; tutup: () => void; aksi: Aksi
+  }
 ) {
-  const [status, setStatus] = useState('PROSES');
+  // Dimulai dari status yang sedang berlaku, bukan dari PROSES.
+  //
+  // Sebelumnya selalu PROSES: membuka form ini pada berkas yang sudah SELESAI
+  // terbaca seolah statusnya masih berjalan, dan sekali Simpan ditekan tanpa
+  // menyentuh dropdown, status berkasnya benar-benar mundur.
+  const [status, setStatus] = useState(sekarang || 'PROSES');
   const [alasan, setAlasan] = useState('');
   const [sibuk, setSibuk] = useState(false);
 

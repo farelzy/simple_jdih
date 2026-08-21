@@ -57,6 +57,13 @@ export interface RingkasPengajuan {
   nama_pemohon: string;
   wa_pemohon: string;
   terakhir: { tanggal: string; tahap: string; keterangan: string } | null;
+  /**
+   * Posisi di rel tahap, 0 sampai `tahap_total`. Dihitung server dari SELURUH
+   * riwayat, bukan dari `terakhir`: tahap LAINNYA adalah yang terbanyak di data
+   * dan ia tidak ada di rel, jadi kejadian terakhir bukan penanda posisi.
+   */
+  tahap_indeks: number;
+  tahap_total: number;
 }
 
 export interface DataMonitoring {
@@ -67,8 +74,10 @@ export interface DataMonitoring {
 
 export interface DataDetail {
   ada: boolean;
-  pengajuan: Omit<RingkasPengajuan, 'terakhir'>;
+  pengajuan: Omit<RingkasPengajuan, 'terakhir' | 'tahap_indeks' | 'tahap_total'>;
   riwayat: { tanggal: string; tahap: string; keterangan: string }[];
   berkas: { kolom: string; nama: string; ukuran: number; url: string }[];
+  tahap_indeks: number;
+  tahap_total: number;
   boleh: { berkas: boolean; wa: boolean };
 }

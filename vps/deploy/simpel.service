@@ -5,7 +5,7 @@ Wants=mariadb.service
 
 [Service]
 Type=simple
-User=finnacantik
+User=simpel
 WorkingDirectory=/opt/simpel/server
 EnvironmentFile=/opt/simpel/server/.env
 
@@ -23,12 +23,12 @@ ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=5
 
-# VPS hanya punya 842 MB dan dibagi dengan semar, combis-queue, php-fpm,
-# mariadb, dan caddy. Tanpa batas ini, kebocoran memori SIMPEL bisa membuat
-# OOM killer memilih tetangganya sebagai korban -- dan yang mati justru
-# jdih.marazystudio.my.id yang tidak bersalah.
-MemoryMax=200M
-MemoryHigh=160M
+# Server 2026-08-19 punya 3,9 GB, jauh lebih lega dari server lama yang 842 MB
+# dan dibagi dengan semar, combis-queue, php-fpm, mariadb, dan caddy. Batasnya
+# tetap dipasang sebagai jaring pengaman kalau ada kebocoran memori, hanya
+# dengan angka yang tidak lagi mencekik. Pemakaian nyata SIMPEL sekitar 38 MB.
+MemoryMax=512M
+MemoryHigh=400M
 
 NoNewPrivileges=true
 PrivateTmp=true

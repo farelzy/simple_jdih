@@ -13,9 +13,12 @@ import { rutePulihkan } from './pulihkan.js';
 import { wajibAdmin, bacaSesi } from '../middleware/auth.js';
 import { GalatKlien } from '../middleware/galat.js';
 import {
-  pengajuanSemua, pengajuanCariNomor, pengajuanUbahStatus
+  pengajuanSemua, pengajuanCariNomor, pengajuanUbahStatus, pengajuanSentuh
 } from '../repo/pengajuan.js';
-import { riwayatTambah } from '../repo/riwayat.js';
+import {
+  riwayatTambah, riwayatUntuk, riwayatCari, riwayatUbah, riwayatHapus,
+  riwayatRingkasPerPengajuan
+} from '../repo/riwayat.js';
 import {
   adminDaftar, adminBuat, adminNonaktifkan, adminHitungAktif,
   adminCari, adminGantiSandi
@@ -25,6 +28,9 @@ import { pengaturanSemua, pengaturanSetel, BATAS_MAKS_MB } from '../repo/pengatu
 import { logTerakhir, logCatat } from '../repo/log.js';
 import { rekapPerStatus, rekapPerOpd, rekapPerBulan, rataLamaProsesHari, cariMandek } from '../pure/rekap.js';
 import { TAHAP_RIWAYAT, STATUS_PENGAJUAN } from '../pure/skema.js';
+import {
+  STASIUN, JUMLAH_STASIUN, stasiunTahap, stasiunTercapai, relDenganStatus, petaStasiun
+} from '../pure/tahap.js';
 import { migrasiPeriksa, migrasiJalankan } from '../services/migrasi.js';
 import { buatBukuKerja } from '../services/ekspor.js';
 import {
@@ -60,6 +66,12 @@ function tanggalSaja(nilai: unknown): string {
 ruteAdmin.get('/data', async (req, res, next) => {
   try {
     const pengaturan = await pengaturanSemua();
+    // Satu kueri untuk seluruh riwayat, sama seperti yang dipakai halaman
+    // monitoring publik. Dashboard menggambar rel yang sama persis dengan yang
+    // dilihat OPD, dan tombol "Ubah tahap" memakai posisi ini untuk memilihkan
+    // pilihan awal serta memperingatkan pilihan yang tidak akan menggerakkan
+    // apa pun.
+    const ringkas = await riwayatRingkasPerPengajuan();
     const semua = (await pengajuanSemua()).map((p) => ({
       nomor: p.nomor,
       id: p.nomor,                       // cariMandek memakai kunci `id`
@@ -69,7 +81,10 @@ ruteAdmin.get('/data', async (req, res, next) => {
       jenis_peraturan: p.jenis_peraturan,
       keterangan: p.keterangan,
       masuk: tanggalSaja(p.dibuat_pada),
-      diperbarui: tanggalSaja(p.diperbarui_pada)
+      diperbarui: tanggalSaja(p.diperbarui_pada),
+      terakhir: ringkas.get(p.id)?.terakhir?.keterangan ?? '',
+      tahap_indeks: relDenganStatus(p.status, ringkas.get(p.id)?.tercapai ?? 0),
+      tahap_total: JUMLAH_STASIUN
     }));
 
     const ambang = Number(pengaturan.ambang_mandek_hari) || 7;
@@ -85,6 +100,11 @@ ruteAdmin.get('/data', async (req, res, next) => {
     res.json({
       emailSaya: bacaSesi(req)?.email ?? '',
       antrean,
+      // Antrean sengaja hanya PROSES, karena itulah pekerjaan yang menunggu.
+      // Tapi berkas yang paling butuh dibetulkan relnya justru yang sudah
+      // SELESAI atau DIKEMBALIKAN, dan tanpa daftar penuh keduanya tidak bisa
+      // disentuh sama sekali dari dashboard.
+      daftar: semua,
       rekap: {
         status: rekapPerStatus(semua),
         opd: rekapPerOpd(semua),
@@ -97,6 +117,12 @@ ruteAdmin.get('/data', async (req, res, next) => {
       admin: await adminDaftar(),
       alasanKembali: ALASAN_KEMBALI,
       tahap: TAHAP_RIWAYAT,
+      // Formulir riwayat memakai dua hal ini untuk memisahkan tahap yang
+      // menggerakkan rel dari yang tidak. Sebelumnya seluruh tahap tampil
+      // sebagai satu daftar rata, dan LAINNYA -- yang tidak ada di rel --
+      // terlihat sama sahnya dengan Pra Harmonisasi.
+      stasiun: STASIUN,
+      tahapStasiun: petaStasiun(TAHAP_RIWAYAT),
       status: STATUS_PENGAJUAN
     });
   } catch (e) { next(e); }
@@ -115,6 +141,80 @@ ruteAdmin.post('/riwayat', async (req, res, next) => {
       keterangan: String(keterangan ?? '')
     }, email);
     await logCatat({ aktor: email, aksi: 'TAMBAH_RIWAYAT', pengajuanId: p.id, rincian: `${tahap} ${tanggal}` });
+    res.json({ sukses: true });
+  } catch (e) { next(e); }
+});
+
+/**
+ * Seluruh riwayat satu pengajuan, berikut posisi relnya.
+ *
+ * Dipakai panel "Kelola riwayat" di dashboard. Yang membedakannya dari
+ * `/api/publik/detail/:nomor` adalah `id` tiap baris -- tanpa itu tidak ada
+ * yang bisa ditunjuk untuk diubah atau dihapus -- dan `stasiun` per baris,
+ * yang membuat baris di luar rel bisa ditandai apa adanya.
+ */
+ruteAdmin.get('/riwayat/:nomor', async (req, res, next) => {
+  try {
+    const p = await pengajuanCariNomor(String(req.params.nomor ?? ''));
+    if (!p) throw new GalatKlien('Pengajuan tidak ditemukan.', 404);
+
+    const riwayat = await riwayatUntuk(p.id);
+    res.json({
+      nomor: p.nomor,
+      judul: p.judul,
+      status: p.status,
+      riwayat: riwayat.map((r) => ({
+        id: r.id,
+        tanggal: tanggalSaja(r.tanggal),
+        tahap: r.tahap,
+        keterangan: r.keterangan,
+        dicatat_oleh: r.dicatat_oleh,
+        stasiun: stasiunTahap(r.tahap)
+      })),
+      tahap_indeks: relDenganStatus(p.status, stasiunTercapai(riwayat.map((r) => r.tahap))),
+      tahap_total: JUMLAH_STASIUN
+    });
+  } catch (e) { next(e); }
+});
+
+ruteAdmin.patch('/riwayat/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const lama = Number.isFinite(id) ? await riwayatCari(id) : null;
+    if (!lama) throw new GalatKlien('Baris riwayat tidak ditemukan.', 404);
+
+    const { tanggal, tahap, keterangan } = (req.body ?? {}) as Record<string, string>;
+    const email = bacaSesi(req)?.email ?? '';
+    await riwayatUbah(id, {
+      tanggal: String(tanggal ?? ''),
+      tahap: String(tahap ?? ''),
+      keterangan: String(keterangan ?? '')
+    }, email);
+    await pengajuanSentuh(lama.pengajuan_id, email);
+
+    // Tahap lama ikut dicatat: tanpa itu log tidak bisa menjawab pertanyaan
+    // yang paling sering muncul setelah sebuah koreksi, yaitu dulu isinya apa.
+    await logCatat({
+      aktor: email, aksi: 'UBAH_RIWAYAT', pengajuanId: lama.pengajuan_id,
+      rincian: `${lama.tahap} ${tanggalSaja(lama.tanggal)} -> ${tahap} ${tanggal}`
+    });
+    res.json({ sukses: true });
+  } catch (e) { next(e); }
+});
+
+ruteAdmin.delete('/riwayat/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const lama = Number.isFinite(id) ? await riwayatCari(id) : null;
+    if (!lama) throw new GalatKlien('Baris riwayat tidak ditemukan.', 404);
+
+    const email = bacaSesi(req)?.email ?? '';
+    await riwayatHapus(id);
+    await pengajuanSentuh(lama.pengajuan_id, email);
+    await logCatat({
+      aktor: email, aksi: 'HAPUS_RIWAYAT', pengajuanId: lama.pengajuan_id,
+      rincian: `${lama.tahap} ${tanggalSaja(lama.tanggal)} ${lama.keterangan}`.trim()
+    });
     res.json({ sukses: true });
   } catch (e) { next(e); }
 });

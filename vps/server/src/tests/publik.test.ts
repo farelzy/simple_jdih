@@ -64,9 +64,32 @@ describe('GET /api/publik/monitoring', () => {
     const r = await request(app).get('/api/publik/monitoring').expect(200);
     expect(JSON.stringify(r.body)).not.toContain('rahasia@uji.local');
   });
+
+  /**
+   * Posisi rel dikirim dari server, bukan disimpulkan peramban dari `terakhir`:
+   * peramban hanya menerima kejadian terakhir, sementara posisi rel butuh
+   * seluruh riwayat. Logika pemetaannya sendiri diuji di pure/tahap.test.ts;
+   * di sini yang diperiksa cuma sambungannya sampai ke jawaban rute.
+   */
+  it('mengirim posisi rel tahap untuk kartu monitoring', async () => {
+    const r = await request(app).get('/api/publik/monitoring').expect(200);
+    expect(r.body.daftar[0].tahap_indeks).toBe(1);
+    expect(r.body.daftar[0].tahap_total).toBe(6);
+  });
 });
 
 describe('GET /api/publik/detail/:nomor', () => {
+  /**
+   * Rel yang sama dipakai di halaman detail. Posisinya tetap dihitung server
+   * supaya pemetaan tahap ke stasiun hanya hidup di satu tempat, bukan
+   * disalin ulang ke peramban.
+   */
+  it('mengirim posisi rel tahap yang sama seperti di monitoring', async () => {
+    const r = await request(app).get(`/api/publik/detail/${nomorUji}`).expect(200);
+    expect(r.body.tahap_indeks).toBe(1);
+    expect(r.body.tahap_total).toBe(6);
+  });
+
   it('mengembalikan pengajuan beserta riwayatnya', async () => {
     const r = await request(app).get(`/api/publik/detail/${nomorUji}`).expect(200);
     expect(r.body.ada).toBe(true);

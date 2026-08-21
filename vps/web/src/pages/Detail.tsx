@@ -4,6 +4,7 @@ import { panggilApi, type DataDetail } from '../lib/api';
 import { formatTanggal, formatUkuran } from '../lib/format';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { LiniMasa } from '../components/LiniMasa';
+import { JejakTahap } from '../components/JejakTahap';
 
 export function Detail() {
   const { nomor } = useParams<{ nomor: string }>();
@@ -48,6 +49,14 @@ export function Detail() {
         {p.opd} &middot; Raper{p.jenis_peraturan === 'Daerah' ? 'da' : 'bup'} &middot;{' '}
         Masuk {formatTanggal(p.masuk)}
       </p>
+
+      {/* Rel yang sama seperti di kartu monitoring, supaya orang yang mengklik
+          dari daftar menemukan penanda posisi yang dikenalinya, bukan bentuk
+          baru. Di sini tanpa catatan: seluruh riwayatnya sudah terbaca lengkap
+          beberapa sentimeter di bawah. */}
+      <div className="kartu jejak-kartu">
+        <JejakTahap indeks={data.tahap_indeks} total={data.tahap_total} />
+      </div>
 
       {p.keterangan && (
         <div className="kartu kartu-peringatan">

@@ -8,7 +8,8 @@
 
 import { Router } from 'express';
 import { pengajuanSemua, pengajuanCariNomor } from '../repo/pengajuan.js';
-import { riwayatUntuk, riwayatTerakhirPerPengajuan } from '../repo/riwayat.js';
+import { riwayatUntuk, riwayatRingkasPerPengajuan } from '../repo/riwayat.js';
+import { JUMLAH_STASIUN, stasiunTercapai, relDenganStatus } from '../pure/tahap.js';
 import { berkasUntuk } from '../repo/berkas.js';
 import { pengaturanSemua, pengaturanBenar } from '../repo/pengaturan.js';
 import { opdSemua, opdCariKode, normalisasiKode } from '../repo/opd.js';
@@ -75,10 +76,11 @@ rutePublik.get('/monitoring', async (req, res, next) => {
     const bolehWa = admin || pengaturanBenar(pengaturan, 'publik_tampilkan_wa');
 
     const semua = await pengajuanSemua();
-    const terakhir = await riwayatTerakhirPerPengajuan();
+    const ringkas = await riwayatRingkasPerPengajuan();
 
     const daftar = semua.map((p) => {
-      const t = terakhir.get(p.id);
+      const r = ringkas.get(p.id);
+      const t = r?.terakhir;
       return {
         nomor: p.nomor,
         judul: p.judul,
@@ -92,7 +94,11 @@ rutePublik.get('/monitoring', async (req, res, next) => {
         wa_pemohon: bolehWa ? formatWa(p.wa_pemohon) : samarkanWa(p.wa_pemohon),
         // email_pemohon sengaja TIDAK ikut: tidak ada alasan alamat surel
         // pemohon tersebar di halaman yang terbuka untuk umum.
-        terakhir: t ? { tanggal: tanggalSaja(t.tanggal), tahap: t.tahap, keterangan: t.keterangan } : null
+        terakhir: t ? { tanggal: tanggalSaja(t.tanggal), tahap: t.tahap, keterangan: t.keterangan } : null,
+        // Posisi rel dihitung di sini, bukan di peramban: peramban cuma menerima
+        // kejadian terakhir, sementara posisi butuh seluruh riwayat.
+        tahap_indeks: relDenganStatus(p.status, r?.tercapai ?? 0),
+        tahap_total: JUMLAH_STASIUN
       };
     });
 
@@ -145,6 +151,8 @@ rutePublik.get('/detail/:nomor', async (req, res, next) => {
       },
       riwayat,
       berkas,
+      tahap_indeks: relDenganStatus(p.status, stasiunTercapai(riwayat.map((r) => r.tahap))),
+      tahap_total: JUMLAH_STASIUN,
       boleh: { berkas: bolehBerkas, wa: bolehWa }
     });
   } catch (e) { next(e); }

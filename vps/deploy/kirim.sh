@@ -6,12 +6,21 @@
 # hasilnya membuat VPS 1 GB tidak perlu menjalankan tsc dan vite -- keduanya
 # butuh ratusan MB yang tidak tersedia di sana.
 #
-#   ./vps/deploy/kirim.sh finnacantik@20.222.178.1
+# Memakai tar lewat ssh, bukan rsync: rsync tidak ada di Git Bash Windows, dan
+# yang dikirim cuma ~260 KB sehingga sinkronisasi berbasis delta tidak terasa
+# untungnya. Satu alat lebih sedikit yang harus terpasang di komputer.
+#
+#   ./vps/deploy/kirim.sh root@38.253.224.32 32030
+#
+# Argumen kedua (port SSH) boleh dikosongkan kalau server memakai port 22.
 
 set -euo pipefail
 
-TUJUAN="${1:?Pemakaian: kirim.sh pengguna@host}"
+TUJUAN="${1:?Pemakaian: kirim.sh pengguna@host [port]}"
+PORT="${2:-22}"
 AKAR="$(cd "$(dirname "$0")/.." && pwd)"
+
+SSH=(ssh -p "$PORT")
 
 echo "==> Membangun server"
 (cd "$AKAR/server" && npm run build)
@@ -19,26 +28,37 @@ echo "==> Membangun server"
 echo "==> Membangun web"
 (cd "$AKAR/web" && npm run build)
 
-echo "==> Menyiapkan folder di VPS"
-ssh "$TUJUAN" 'sudo mkdir -p /opt/simpel/server /opt/simpel/web \
-  && sudo chown -R "$USER":"$USER" /opt/simpel'
+echo "==> Membungkus hasil build"
+BUNGKUS="$(mktemp -t simpel-rilis-XXXXXX.tar.gz)"
+trap 'rm -f "$BUNGKUS"' EXIT
+tar -czf "$BUNGKUS" -C "$AKAR" \
+  server/dist server/sql server/package.json server/package-lock.json web/dist
 
-echo "==> Mengirim server"
-rsync -az --delete "$AKAR/server/dist/"         "$TUJUAN:/opt/simpel/server/dist/"
-rsync -az --delete "$AKAR/server/sql/"          "$TUJUAN:/opt/simpel/server/sql/"
-rsync -az          "$AKAR/server/package.json"  "$TUJUAN:/opt/simpel/server/"
-rsync -az          "$AKAR/server/package-lock.json" "$TUJUAN:/opt/simpel/server/"
-
-echo "==> Mengirim web"
-rsync -az --delete "$AKAR/web/dist/" "$TUJUAN:/opt/simpel/web/"
+echo "==> Mengirim dan memasang"
+# Isi lama dibuang lebih dulu supaya berkas yang sudah tidak ada di build baru
+# tidak tertinggal di server -- padanan --delete milik rsync.
+"${SSH[@]}" "$TUJUAN" 'cat > /tmp/simpel-rilis.tar.gz' < "$BUNGKUS"
+"${SSH[@]}" "$TUJUAN" 'set -e
+  sudo mkdir -p /opt/simpel/server /opt/simpel/web
+  rm -rf /tmp/rilis && mkdir -p /tmp/rilis
+  tar -xzf /tmp/simpel-rilis.tar.gz -C /tmp/rilis
+  sudo rm -rf /opt/simpel/server/dist /opt/simpel/server/sql /opt/simpel/web
+  sudo mkdir -p /opt/simpel/web
+  sudo cp -a /tmp/rilis/server/dist /opt/simpel/server/dist
+  sudo cp -a /tmp/rilis/server/sql  /opt/simpel/server/sql
+  sudo cp -a /tmp/rilis/server/package.json /tmp/rilis/server/package-lock.json /opt/simpel/server/
+  sudo cp -a /tmp/rilis/web/dist/. /opt/simpel/web/'
 
 echo "==> Memasang dependensi produksi"
-ssh "$TUJUAN" 'cd /opt/simpel/server && npm ci --omit=dev --silent'
+"${SSH[@]}" "$TUJUAN" 'cd /opt/simpel/server && sudo npm ci --omit=dev --silent --no-audit --no-fund'
+
+echo "==> Mengembalikan kepemilikan"
+"${SSH[@]}" "$TUJUAN" 'sudo chown -R simpel:simpel /opt/simpel'
 
 echo "==> Menjalankan ulang layanan"
-ssh "$TUJUAN" 'sudo systemctl restart simpel && sleep 2 && systemctl is-active simpel'
+"${SSH[@]}" "$TUJUAN" 'sudo systemctl restart simpel && sleep 3 && systemctl is-active simpel'
 
 echo "==> Memeriksa kesehatan"
-ssh "$TUJUAN" 'curl -sf http://127.0.0.1:3101/api/sehat && echo'
+"${SSH[@]}" "$TUJUAN" 'curl -sf http://127.0.0.1:3101/api/sehat && echo'
 
 echo "Selesai."

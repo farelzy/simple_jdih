@@ -4,6 +4,13 @@ import { panggilApi, type DataMonitoring } from '../lib/api';
 import { formatTanggal } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
+import { JejakTahap } from '../components/JejakTahap';
+
+const KELAS_STATUS: Record<string, string> = {
+  PROSES: 's-proses',
+  SELESAI: 's-selesai',
+  DIKEMBALIKAN: 's-dikembalikan'
+};
 
 export function Monitoring() {
   const [data, setData] = useState<DataMonitoring | null>(null);
@@ -100,16 +107,26 @@ export function Monitoring() {
         <p className="petunjuk">Tidak ada pengajuan yang cocok.</p>
       ) : (
         hasil.map((p) => (
-          <Link key={p.nomor} to={`/detail/${p.nomor}`} className="kartu kartu-tautan">
+          <Link
+            key={p.nomor}
+            to={`/detail/${p.nomor}`}
+            className={`kartu kartu-tautan kartu-status ${KELAS_STATUS[p.status] ?? ''}`}
+          >
             <div className="baris-atas">
               <span className="kode">{p.nomor}</span>
               <LencanaStatus status={p.status} />
             </div>
             <p className="judul-pengajuan">{p.judul}</p>
             <p className="meta">{p.opd} &middot; {formatTanggal(p.masuk)}</p>
-            {p.terakhir && (
-              <p className="terakhir">&#9656; Terakhir: {p.terakhir.keterangan}</p>
-            )}
+            {/* Menggantikan baris "Terakhir: ..." yang berdiri sendiri. Kabar
+                terakhir kini jadi keterangan di bawah rel, sehingga satu blok
+                menjawab dua hal sekaligus: sudah sampai mana, dan apa
+                kejadian terakhirnya. */}
+            <JejakTahap
+              indeks={p.tahap_indeks}
+              total={p.tahap_total}
+              catatan={p.terakhir?.keterangan}
+            />
           </Link>
         ))
       )}

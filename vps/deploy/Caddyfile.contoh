@@ -1,6 +1,21 @@
-# Tambahkan blok ini ke /etc/caddy/Caddyfile.
-# Jangan sentuh blok jdih.marazystudio.my.id dan compbus.marazystudio.my.id
-# yang sudah ada -- keduanya melayani aplikasi lain yang sedang hidup.
+# DUA VARIAN. Pilih satu sesuai cara lalu lintas masuk.
+#
+# Varian A -- di balik Cloudflare Tunnel (yang dipakai server 38.253.224.32
+# sejak 19 Agustus 2026). Tanpa nama domain sama sekali: tunnel meneruskan ke
+# http://localhost:80 apa pun Host header-nya, dan routing hostname-nya diatur
+# di dashboard Cloudflare, bukan di sini. Menuliskan nama domain justru membuat
+# Caddy mencoba menerbitkan sertifikat Let's Encrypt lewat port 80 yang tidak
+# diteruskan provider, sampai jatah percobaannya habis tanpa pernah berhasil.
+# TLS-nya ditangani Cloudflare di tepi, dan jalur tunnel-nya sudah terenkripsi.
+#
+#   :80 {
+#       ... isi blok yang sama persis seperti di bawah ...
+#   }
+#
+# Varian B -- port 80 dan 443 benar-benar diteruskan ke VM. Pakai blok bernama
+# di bawah ini supaya Caddy mengurus Let's Encrypt sendiri.
+#
+# Kalau server dipakai bersama aplikasi lain, jangan sentuh blok milik mereka.
 
 simple.jdih.marazystudio.my.id {
 	# Frontend: hasil `npm run build` di vps/web
