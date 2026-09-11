@@ -11,8 +11,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { uraiCsv, urlEksporCsv } from '../src/pure/csv';
-import { susunDariBaris } from '../src/pure/sheet';
+import { uraiCsv, urlEksporCsv } from '../src/pure/csv.js';
+import { susunDariBaris } from '../src/pure/sheet.js';
 
 /**
  * Berapa lama jawaban boleh dipakai ulang sebelum ditarik lagi.

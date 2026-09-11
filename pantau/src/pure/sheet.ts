@@ -15,10 +15,10 @@
  * halaman baru.
  */
 
-import { cocokkanHeader } from './skema';
-import { uraiKolomProses } from './parser-riwayat';
-import { rekapPerStatus } from './rekap';
-import { relDenganStatus, stasiunTercapai, JUMLAH_STASIUN } from './tahap';
+import { cocokkanHeader } from './skema.js';
+import { uraiKolomProses } from './parser-riwayat.js';
+import { rekapPerStatus } from './rekap.js';
+import { relDenganStatus, stasiunTercapai, JUMLAH_STASIUN } from './tahap.js';
 
 /** Kolom berkas beserta nama yang ditampilkan ke pembaca. */
 const KOLOM_BERKAS: readonly { kunci: string; nama: string }[] = [

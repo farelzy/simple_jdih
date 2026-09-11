@@ -1,0 +1,6 @@
+# Dibuat Vercel CLI, memuat id proyek dan token OIDC.
+.vercel
+
+# Rahasia. .env.contoh dikecualikan karena isinya memang contoh.
+.env*
+!.env.contoh

@@ -15,9 +15,9 @@
  * Google seharusnya tidak mengosongkan halaman yang sudah terisi benar.
  */
 import { useEffect, useState } from 'react';
-import type { DataPantau } from '../pure/sheet';
+import type { DataPantau } from '../pure/sheet.js';
 
-export type { DataPantau, PengajuanPantau, BerkasPantau, KejadianPantau } from '../pure/sheet';
+export type { DataPantau, PengajuanPantau, BerkasPantau, KejadianPantau } from '../pure/sheet.js';
 
 export interface DataSitus extends DataPantau {
   /** Kapan Vercel terakhir menarik dari spreadsheet. */
