@@ -6,6 +6,9 @@ import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { StatusData } from '../components/StatusData';
 
+/** Tautan Google Form pengajuan; bila kosong, tombolnya tidak digambar. */
+const URL_FORM = import.meta.env.VITE_URL_FORM as string | undefined;
+
 const KELAS_STATUS: Record<string, string> = {
   PROSES: 's-proses',
   SELESAI: 's-selesai',
@@ -56,6 +59,21 @@ export function Monitoring() {
           Raperda/Raperbup di Bagian Hukum Sekretariat Daerah Kabupaten Brebes
         </p>
       </header>
+
+      {URL_FORM && (
+        // Tombol besar di halaman depan, bukan hanya menu di navbar. OPD yang
+        // datang untuk mengajukan biasanya membuka halaman ini lebih dulu, dan
+        // menu di pojok kanan atas mudah terlewat di layar ponsel.
+        <div className="ajakan">
+          <a className="tombol tombol-utama" href={URL_FORM}
+             target="_blank" rel="noopener noreferrer">
+            Ajukan Raperda/Raperbup &rarr;
+          </a>
+          <span className="petunjuk">
+            Pengiriman lewat Google Form. Berkas diunggah langsung di formulir itu.
+          </span>
+        </div>
+      )}
 
       <h2 className="judul-bagian">Monitoring Raperda/Raperbup</h2>
 

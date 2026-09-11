@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { usePantau } from '../lib/data';
 import { formatTanggal } from '../lib/format';
+import { waInternasional } from '../pure/sheet.js';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { LiniMasa } from '../components/LiniMasa';
 import { StatusData } from '../components/StatusData';
@@ -97,8 +98,28 @@ export function Detail() {
       <section className="kartu">
         <h2>Pemohon</h2>
         <p>{p.nama_pemohon || <span className="petunjuk">Tidak dicantumkan</span>}</p>
-        {/* Nomor WhatsApp dan email sengaja tidak ditampilkan di mana pun, dan
-            memang tidak pernah ikut dikirim dari api/data.ts. */}
+
+        {/* Kontak hanya ada bila TAMPILKAN_KONTAK menyala di Vercel; saat
+            dimatikan, kolomnya memang tidak pernah terkirim ke sini. */}
+        <ul className="kontak">
+          {p.wa_pemohon && (
+            <li>
+              <span className="kontak-label">WhatsApp</span>
+              {waInternasional(p.wa_pemohon) ? (
+                <a href={`https://wa.me/${waInternasional(p.wa_pemohon)}`}
+                   target="_blank" rel="noopener noreferrer">{p.wa_pemohon}</a>
+              ) : (
+                <span>{p.wa_pemohon}</span>
+              )}
+            </li>
+          )}
+          {p.email_pemohon && (
+            <li>
+              <span className="kontak-label">Email</span>
+              <a href={`mailto:${p.email_pemohon}`}>{p.email_pemohon}</a>
+            </li>
+          )}
+        </ul>
       </section>
 
       <Link to="/" className="tombol">&larr; Kembali</Link>

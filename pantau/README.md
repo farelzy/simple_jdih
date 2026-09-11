@@ -30,10 +30,15 @@ tautannya.
 
 ## Privasi
 
-Nomor WhatsApp dan email pemohon **tidak pernah ikut keluar** dari
-`src/pure/sheet.ts`. Penyaringan dilakukan di tempat data disusun, bukan di
-halaman yang menampilkannya — supaya halaman baru yang lupa menyaring tidak bisa
-membocorkannya.
+Nomor WhatsApp dan email pemohon hanya ikut bila `TAMPILKAN_KONTAK=1`.
+Penyaringannya di tempat data disusun, bukan di halaman yang menampilkannya —
+supaya halaman baru yang lupa menyaring tidak bisa membocorkannya. Saat
+dimatikan, keduanya memang tidak pernah terkirim ke peramban, bukan sekadar
+disembunyikan dari tampilan.
+
+Situs ini terbuka tanpa login, jadi menyalakannya berarti kontak seluruh
+pemohon bisa dipanen mesin pengindeks dan pengirim spam. Dimatikan kembali
+lewat dashboard Vercel dalam hitungan menit, tanpa menyentuh kode.
 
 Tapi itu hanya menutup jalur situs. **Spreadsheetnya sendiri harus ikut
 ditutup**, karena selama ia bisa dibaca lewat tautan, isinya bisa diunduh
@@ -52,7 +57,8 @@ tab → CSV*, dan arahkan `SHEET_GID` ke tab tersebut. Tab utama tetap tertutup.
 |---|---|---|
 | `SHEET_ID` | ya | ID spreadsheet, bagian setelah `/d/` pada URL-nya |
 | `SHEET_GID` | tidak | gid tab yang dibaca; bawaannya `0` |
-| `VITE_URL_FORM` | tidak | tautan Google Form; bila kosong, menu "Ajukan" disembunyikan |
+| `VITE_URL_FORM` | tidak | tautan Google Form; bila kosong, tombol "Ajukan" disembunyikan |
+| `TAMPILKAN_KONTAK` | tidak | `1` menampilkan nomor WhatsApp dan email pemohon; bawaannya `0` |
 
 ## Nomor pengajuan
 

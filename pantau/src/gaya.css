@@ -149,6 +149,22 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
   font-size: 14px;
   line-height: 1.7;
 }
+/**
+ * Ajakan mengajukan di halaman depan.
+ *
+ * Menu "Ajukan" di navbar tetap ada, tapi di ponsel ia menyusut jadi tautan
+ * kecil di pojok. Blok ini yang benar-benar terlihat oleh OPD yang datang
+ * untuk mengirim, bukan untuk memantau.
+ */
+.ajakan {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin: 0 0 24px; padding: 16px 18px;
+  background: linear-gradient(135deg, var(--biru-muda), var(--putih));
+  border: 1px solid var(--garis);
+  border-radius: var(--sudut-besar);
+}
+.ajakan .petunjuk { flex: 1; min-width: 200px; margin: 0; }
+
 .judul-bagian { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
 
 /**
@@ -442,6 +458,18 @@ label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
 }
 
 /* Lini masa */
+/* Kontak pemohon di halaman detail. */
+.kontak { list-style: none; margin: 8px 0 0; padding: 0; }
+.kontak li {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid var(--garis); font-size: 14px;
+}
+.kontak li:last-child { border-bottom: none; }
+.kontak-label {
+  flex: 0 0 86px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .6px; color: var(--teks-lemah);
+}
+
 .linimasa { list-style: none; margin: 0; padding: 0; }
 .linimasa li { position: relative; padding: 0 0 24px 32px; border-left: 2px solid var(--garis); }
 .linimasa li:last-child { border-left-color: transparent; padding-bottom: 0; }
@@ -688,6 +716,8 @@ tbody tr:hover { background: var(--biru-muda); }
   .berkas li { flex-direction: column; align-items: flex-start; gap: 6px; }
   .berkas-ukuran { width: 100%; justify-content: space-between; }
 
+  .ajakan { flex-direction: column; align-items: stretch; gap: 10px; text-align: center; }
+  .ajakan .tombol { width: 100%; }
   .status-data { flex-direction: column; align-items: stretch; gap: 8px; }
   .status-data .tombol { width: 100%; }
   .panduan li { padding-left: 38px; margin-left: 13px; }

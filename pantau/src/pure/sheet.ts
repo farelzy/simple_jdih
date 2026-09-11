@@ -9,10 +9,11 @@
  * Fungsi murni tanpa I/O: seluruh pengambilan data ada di api/data.ts. Dengan
  * begitu bentuk keluarannya bisa diuji tanpa menyentuh jaringan sama sekali.
  *
- * Nomor WhatsApp dan email pemohon SENGAJA tidak pernah ikut keluar dari sini.
- * Menyaringnya di tempat data disusun, bukan di halaman yang menampilkannya,
- * membuat kebocoran tidak mungkin terjadi karena lupa menyaring di satu
- * halaman baru.
+ * Nomor WhatsApp dan email pemohon hanya ikut bila `kontak` dinyalakan.
+ * Penyaringannya di sini, di tempat data disusun -- bukan di halaman yang
+ * menampilkannya -- supaya halaman baru yang lupa menyaring tidak bisa
+ * membocorkannya. Saat dimatikan, keduanya tidak sekadar disembunyikan dari
+ * tampilan: mereka memang tidak pernah terkirim ke peramban.
  */
 
 import { cocokkanHeader } from './skema.js';
@@ -53,6 +54,9 @@ export interface PengajuanPantau {
   masuk: string;
   diperbarui: string;
   nama_pemohon: string;
+  /** Hanya ada bila sakelar kontak menyala. */
+  wa_pemohon?: string;
+  email_pemohon?: string;
   terakhir: KejadianPantau | null;
   riwayat: KejadianPantau[];
   berkas: BerkasPantau[];
@@ -96,6 +100,27 @@ export function pecahTautan(sel: unknown): string[] {
     .filter((s) => /^https?:\/\//i.test(s));
 }
 
+/**
+ * Nomor WhatsApp jadi bentuk yang bisa ditelepon.
+ *
+ * Di spreadsheet nomornya ditulis bermacam-macam: '0858...', '62858...',
+ * '+62 858-...'. Yang dikirim ke peramban tetap apa adanya untuk dibaca, tapi
+ * bentuk internasional tanpa tanda baca ikut disediakan supaya tautan wa.me
+ * bekerja tanpa peramban harus menebak.
+ */
+export function rapikanWa(nilai: unknown): string {
+  return String(nilai ?? '').trim();
+}
+
+/** '0858-7029-9512' -> '628587029512'; kosong bila tidak terbaca sebagai nomor. */
+export function waInternasional(nomor: unknown): string {
+  const angka = String(nomor ?? '').replace(/[^0-9]/g, '');
+  if (angka.length < 9) return '';
+  if (angka.startsWith('62')) return angka;
+  if (angka.startsWith('0')) return '62' + angka.slice(1);
+  return angka;
+}
+
 /** Status yang dikenali; selain itu dianggap PROSES supaya tidak hilang dari daftar. */
 function bakukanStatus(nilai: unknown): string {
   const s = String(nilai ?? '').trim().toUpperCase();
@@ -122,7 +147,14 @@ function nomorBaris(id: unknown, masuk: string, urut: number): string {
  *
  * @param baris hasil uraiCsv, baris pertama berisi judul kolom
  */
-export function susunDariBaris(baris: readonly (readonly string[])[]): DataPantau {
+export interface OpsiSusun {
+  /** Sertakan nomor WhatsApp dan email pemohon. Bawaannya tidak. */
+  kontak?: boolean;
+}
+
+export function susunDariBaris(
+  baris: readonly (readonly string[])[], opsi: OpsiSusun = {}
+): DataPantau {
   if (!baris.length) return { hitungan: rekapPerStatus([]), tahun: [], daftar: [] };
 
   const { peta } = cocokkanHeader(baris[0] as string[]);
@@ -177,6 +209,12 @@ export function susunDariBaris(baris: readonly (readonly string[])[]): DataPanta
       // besar memang kosong -- kejadian terakhir di lini masa jadi penggantinya.
       diperbarui: diperbaruiSel || tanggalRiwayat[tanggalRiwayat.length - 1] || masuk,
       nama_pemohon: sel(r, 'nama_pemohon'),
+      ...(opsi.kontak
+        ? {
+            wa_pemohon: rapikanWa(sel(r, 'wa_pemohon')),
+            email_pemohon: sel(r, 'email_pemohon')
+          }
+        : {}),
       terakhir: riwayat.length ? riwayat[riwayat.length - 1]! : null,
       riwayat,
       berkas

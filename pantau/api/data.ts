@@ -35,6 +35,18 @@ import { susunDariBaris } from '../src/pure/sheet.js';
 const TENGGANG_DETIK = 30;
 const BASI_DETIK = 300;
 
+/**
+ * Tampilkan nomor WhatsApp dan email pemohon?
+ *
+ * Situs ini terbuka tanpa login, jadi menyalakannya berarti kontak seluruh
+ * pemohon bisa dipanen mesin pengindeks. Disetel lewat environment supaya bisa
+ * dimatikan dari dashboard Vercel dalam hitungan menit, tanpa menyentuh kode.
+ * Apa pun selain '0' dianggap menyala.
+ */
+function kontakTampil(): boolean {
+  return (process.env.TAMPILKAN_KONTAK ?? '0') !== '0';
+}
+
 function konfig(): { id: string; gid: string } {
   const id = process.env.SHEET_ID ?? '';
   if (!id) throw new Error('SHEET_ID belum disetel di environment Vercel.');
@@ -68,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
     }
 
-    const data = susunDariBaris(uraiCsv(teks));
+    const data = susunDariBaris(uraiCsv(teks), { kontak: kontakTampil() });
 
     res.setHeader(
       'Cache-Control',
