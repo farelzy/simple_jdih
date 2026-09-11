@@ -4,7 +4,6 @@ import { usePantau } from '../lib/data';
 import { formatTanggal } from '../lib/format';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { LiniMasa } from '../components/LiniMasa';
-import { JejakTahap } from '../components/JejakTahap';
 import { StatusData } from '../components/StatusData';
 
 export function Detail() {
@@ -56,10 +55,6 @@ export function Detail() {
         {p.opd} &middot; Raper{p.jenis_peraturan === 'Daerah' ? 'da' : 'bup'} &middot;{' '}
         Masuk {formatTanggal(p.masuk)}
       </p>
-
-      <div className="kartu jejak-kartu">
-        <JejakTahap indeks={p.tahap_indeks} total={p.tahap_total} />
-      </div>
 
       <StatusData ditarik={data?.ditarik} menyegarkan={menyegarkan} galat={galat} />
 

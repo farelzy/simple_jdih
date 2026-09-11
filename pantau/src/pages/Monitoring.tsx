@@ -4,7 +4,6 @@ import { usePantau } from '../lib/data';
 import { formatTanggal } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
-import { JejakTahap } from '../components/JejakTahap';
 import { StatusData } from '../components/StatusData';
 
 const KELAS_STATUS: Record<string, string> = {
@@ -112,11 +111,12 @@ export function Monitoring() {
             </div>
             <p className="judul-pengajuan">{p.judul}</p>
             <p className="meta">{p.opd} &middot; {formatTanggal(p.masuk)}</p>
-            <JejakTahap
-              indeks={p.tahap_indeks}
-              total={p.tahap_total}
-              catatan={p.terakhir?.keterangan}
-            />
+            {/* Kabar terakhir menggantikan rel enam titik. Statusnya sendiri
+                sudah terbaca dari lencana dan warna tepi kartu; yang belum
+                terjawab hanyalah "apa kejadian terakhirnya". */}
+            {p.terakhir && (
+              <p className="terakhir">&#9656; Terakhir: {p.terakhir.keterangan}</p>
+            )}
           </Link>
         ))
       )}

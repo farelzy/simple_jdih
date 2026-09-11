@@ -18,7 +18,6 @@
 import { cocokkanHeader } from './skema.js';
 import { uraiKolomProses } from './parser-riwayat.js';
 import { rekapPerStatus } from './rekap.js';
-import { relDenganStatus, stasiunTercapai, JUMLAH_STASIUN } from './tahap.js';
 
 /** Kolom berkas beserta nama yang ditampilkan ke pembaca. */
 const KOLOM_BERKAS: readonly { kunci: string; nama: string }[] = [
@@ -41,7 +40,6 @@ export interface BerkasPantau {
 
 export interface KejadianPantau {
   tanggal: string;
-  tahap: string;
   keterangan: string;
 }
 
@@ -56,8 +54,6 @@ export interface PengajuanPantau {
   diperbarui: string;
   nama_pemohon: string;
   terakhir: KejadianPantau | null;
-  tahap_indeks: number;
-  tahap_total: number;
   riwayat: KejadianPantau[];
   berkas: BerkasPantau[];
 }
@@ -148,8 +144,11 @@ export function susunDariBaris(baris: readonly (readonly string[])[]): DataPanta
     const status = bakukanStatus(sel(r, 'status'));
     const tahun = Number(masuk.slice(0, 4)) || new Date().getFullYear();
 
+    // Yang diambil hanya tanggal dan kalimatnya. Penebakan tahap dari kata-kata
+    // sengaja tidak dipakai: statusnya sudah diisi manual di kolom Status, dan
+    // dua penanda yang bisa berbeda pendapat lebih membingungkan daripada satu.
     const riwayat: KejadianPantau[] = uraiKolomProses(sel(r, 'proses'), tahun)
-      .map((k) => ({ tanggal: k.tanggal, tahap: k.tahap, keterangan: k.keterangan }));
+      .map((k) => ({ tanggal: k.tanggal, keterangan: k.keterangan }));
 
     const berkas: BerkasPantau[] = [];
     for (const kol of KOLOM_BERKAS) {
@@ -179,8 +178,6 @@ export function susunDariBaris(baris: readonly (readonly string[])[]): DataPanta
       diperbarui: diperbaruiSel || tanggalRiwayat[tanggalRiwayat.length - 1] || masuk,
       nama_pemohon: sel(r, 'nama_pemohon'),
       terakhir: riwayat.length ? riwayat[riwayat.length - 1]! : null,
-      tahap_indeks: relDenganStatus(status, stasiunTercapai(riwayat.map((k) => k.tahap))),
-      tahap_total: JUMLAH_STASIUN,
       riwayat,
       berkas
     });

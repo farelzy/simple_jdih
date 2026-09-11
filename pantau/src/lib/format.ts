@@ -17,10 +17,3 @@ export function formatUkuran(byte: number): string {
   return `${(n / 1048576).toFixed(1).replace('.', ',')} MB`;
 }
 
-/** 'REVIU_HUKUM' -> 'Reviu Hukum' */
-export function labelTahap(tahap: string): string {
-  return String(tahap ?? '')
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/(^|\s)\S/g, (h) => h.toUpperCase());
-}

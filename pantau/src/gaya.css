@@ -394,64 +394,6 @@ label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
 .meta { font-size: 12.5px; color: var(--teks-lemah); font-weight: 500; }
 
 /**
- * Rel tahap di kaki kartu. Posisinya dikirim server lewat `tahap_indeks`;
- * lihat components/JejakTahap.tsx dan server/src/pure/tahap.ts.
- */
-.jejak { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--garis); }
-.jejak-rel {
-  list-style: none; margin: 0 0 9px; padding: 0;
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-}
-.jejak-titik { position: relative; padding-top: 15px; min-width: 0; }
-
-/* Rel penghubung. Satu ruas per stasiun, membentang selebar selnya dan
-   terpusat di titiknya, jadi separuh kiri adalah ruas masuk dan separuh kanan
-   ruas keluar. Ruas pertama dan terakhir dipotong supaya rel tidak menjulur
-   keluar dari titik ujung. */
-.jejak-titik::before {
-  content: ''; position: absolute; top: 4px; left: 0; right: 0;
-  height: 2px; background: var(--garis);
-}
-.jejak-titik:first-child::before { left: 50%; }
-.jejak-titik:last-child::before { right: 50%; }
-.jejak-titik.lewat::before { background: var(--biru-utama); }
-.jejak-titik.kini::before {
-  background: linear-gradient(90deg, var(--biru-utama) 50%, var(--garis) 50%);
-}
-
-.jejak-titik::after {
-  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--putih); border: 2px solid var(--garis);
-}
-.jejak-titik.lewat::after { background: var(--biru-utama); border-color: var(--biru-utama); }
-.jejak-titik.kini::after {
-  background: var(--proses); border-color: var(--proses);
-  box-shadow: 0 0 0 3px var(--proses-bg);
-}
-
-.jejak-label {
-  display: block; text-align: center; font-size: 10px; line-height: 1.3;
-  color: var(--teks-lemah); font-weight: 500;
-}
-.jejak-titik.lewat .jejak-label { color: var(--biru-utama); }
-.jejak-titik.kini .jejak-label { color: var(--teks-utama); font-weight: 700; }
-
-.jejak-catatan {
-  display: flex; gap: 10px; align-items: baseline; flex-wrap: nowrap;
-  margin: 0; font-size: 12.5px; color: var(--teks-lemah);
-}
-.jejak-kabar {
-  flex: 1; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.jejak-hitung { margin-left: auto; font-weight: 600; font-size: 11.5px; white-space: nowrap; }
-
-/* Di halaman detail rel berdiri sendiri di dalam kartunya, jadi garis pemisah
-   atasnya tidak memisahkan apa pun dan hanya menambah satu garis. */
-.jejak-kartu .jejak { margin-top: 0; padding-top: 0; border-top: none; }
-
-/**
  * Panel kelola riwayat di dashboard.
  *
  * Barisnya sengaja tidak dibuat sebagai tabel: tiap baris punya keterangan
@@ -514,10 +456,6 @@ label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
   box-shadow: 0 0 0 4px rgba(37, 99, 235, .15);
 }
 .linimasa-tanggal { font-weight: 700; font-size: 13px; }
-.linimasa-tahap {
-  font-size: 11px; color: var(--teks-lemah); text-transform: uppercase;
-  letter-spacing: .6px; font-weight: 600;
-}
 
 /* Daftar berkas */
 .berkas { list-style: none; margin: 0; padding: 0; }
@@ -678,20 +616,6 @@ tbody tr:hover { background: var(--biru-muda); }
   .judul-pengajuan { font-size: 14.5px; }
   .baris-atas { flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
   .meta { font-size: 12px; }
-
-  /**
-   * Label stasiun disembunyikan di ponsel, titiknya tetap.
-   *
-   * Enam label di layar 320px menyisakan sekitar 53px per kolom, dan "Pra
-   * Harmonisasi" membungkus jadi dua baris -- relnya sendiri lalu setinggi
-   * judul pengajuan. Titik plus baris "Tahap 4 dari 6" di bawahnya sudah
-   * menyampaikan hal yang sama dengan tinggi seperempatnya.
-   */
-  .jejak { margin-top: 10px; padding-top: 9px; }
-  .jejak-label { display: none; }
-  .jejak-titik { padding-top: 12px; }
-  .jejak-rel { margin-bottom: 7px; }
-  .jejak-catatan { font-size: 12px; }
 
   .tombol-baris { flex-direction: column-reverse; }
   .tombol-baris .tombol { width: 100%; }

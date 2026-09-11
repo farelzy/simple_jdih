@@ -116,5 +116,20 @@ Jalur `/api` dikecualikan supaya tidak ikut tertelan.
 ## Kode yang dipakai ulang
 
 `src/pure/` disalin apa adanya dari versi VPS — pengurai CSV, pencocokan header,
-pembaca kolom lini masa, rekap, dan pemetaan rel enam tahap. Salinan, bukan
-impor lintas folder, supaya proyek ini berdiri sendiri saat di-deploy.
+pembaca kolom lini masa, dan rekap. Salinan, bukan impor lintas folder, supaya
+proyek ini berdiri sendiri saat di-deploy.
+
+Impor di jalur server memakai ekstensi `.js` yang menunjuk berkas `.ts`
+sumbernya. Bukan gaya, tapi keharusan: Vercel menyalin `api/data.ts` jadi
+`.js` tanpa membundel impornya, dan Node ESM menolak penentu tanpa ekstensi.
+
+## Status
+
+Tiga saja, diambil apa adanya dari kolom `Status` di spreadsheet:
+**PROSES**, **SELESAI**, **DIKEMBALIKAN**.
+
+Versi sebelumnya menebak enam tahap dari kata-kata di kolom proses lalu
+menggambarnya sebagai rel bertitik. Itu dibuang: statusnya sudah diisi manual,
+dan dua penanda yang bisa berbeda pendapat lebih membingungkan daripada satu.
+Kalimat di kolom proses tetap tampil utuh sebagai lini masa — hanya tidak lagi
+dipaksa masuk ke salah satu kotak.
