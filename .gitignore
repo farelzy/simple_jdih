@@ -27,3 +27,6 @@ vps/web/dist/
 
 # Keluaran sementara pemeriksaan
 .keluaran/
+
+# Hasil build situs pantau
+pantau/dist/

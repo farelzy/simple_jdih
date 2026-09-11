@@ -1,0 +1,761 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/**
+ * gaya.css - dipindahkan apa adanya dari GAS_version/Index.html supaya tampilan
+ * kedua versi benar-benar sama, bukan sekadar mirip.
+ *
+ * Ditulis sebagai CSS biasa dengan nama kelas yang sama, bukan diterjemahkan
+ * ke utilitas Tailwind: terjemahan pasti meleset di detail seperti bayangan,
+ * gradien, dan jeda animasi -- dan meleset sedikit di banyak tempat justru
+ * terlihat lebih janggal daripada berbeda sekalian.
+ */
+
+/**
+ * Palet digeser dari biru bawaan (#2563EB) ke biru tinta yang lebih tua.
+ *
+ * Alasannya bukan selera: #2563EB adalah biru yang sama persis dipakai ratusan
+ * ribu situs karena ia warna bawaan satu kerangka kerja populer, dan sistem
+ * pemerintah daerah yang memakainya langsung terbaca sebagai templat. Biru
+ * tinta memberi kesan resmi tanpa kehilangan keterbacaan.
+ *
+ * Warna status digeser lebih tua dengan alasan berbeda: #F59E0B dan #10B981
+ * terlalu terang untuk teks kecil di atas latar putih. Nilai di bawah semuanya
+ * lulus kontras 4.5:1 pada pasangan bg dan teks masing-masing.
+ */
+:root {
+  --biru-utama: #2E3F7A;
+  --biru-tua: #23305C;
+  --biru-muda: #EEF1F9;
+  --biru-aksen: #4A5FA8;
+  --latar: #F3F5F9;
+  --putih: #FFF;
+  --teks-utama: #171B26;
+  --teks-lemah: #626C82;
+  --garis: #E1E6F0;
+  --proses: #D08B1F;
+  --proses-bg: #FBF1DF;
+  --proses-teks: #8A5A11;
+  --selesai: #1B7355;
+  --selesai-bg: #E3F3ED;
+  --selesai-teks: #146143;
+  --dikembalikan: #A13340;
+  --dikembalikan-bg: #FBEEEF;
+  --dikembalikan-teks: #8A2833;
+  --sudut: 10px;
+  --sudut-besar: 12px;
+  --bayang: 0 1px 2px rgba(23, 27, 38, .05), 0 1px 1px rgba(23, 27, 38, .03);
+  --bayang-naik: 0 8px 20px -6px rgba(23, 27, 38, .12), 0 4px 8px -4px rgba(23, 27, 38, .06);
+  --bayang-biru: 0 3px 10px rgba(46, 63, 122, .22);
+  --transisi: all .2s cubic-bezier(.4, 0, .2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--latar);
+  color: var(--teks-utama);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Halaman tidak pernah menggeser mendatar; tabel menggeser di wadahnya sendiri. */
+/**
+ * Hanya di <html>, JANGAN ditambahkan ke <body>.
+ *
+ * `overflow-x: hidden` pada <body> memaksa overflow-y-nya jadi `auto`, dan
+ * <body> berubah jadi wadah gulir tersendiri. Tingginya mengikuti isi, jadi ia
+ * tidak pernah benar-benar tergulir -- dan setiap `position: sticky` di
+ * dalamnya kehilangan acuan lalu diam saja. Itu sempat mematikan navbar dan
+ * tab dashboard sekaligus.
+ *
+ * Pada <html>, nilainya diteruskan ke viewport, jadi pemotongan mendatar tetap
+ * berlaku tanpa membuat wadah gulir baru.
+ */
+html { overflow-x: hidden; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wadah { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+/* margin auto ikut disebut di sini karena wadah-sempit dipakai BERSARANG di
+   dalam .wadah, bukan berdampingan dengannya. Tanpa ini ia menempel ke kiri
+   dan sisi kanannya tidak sejajar dengan navbar. */
+.wadah-sempit { max-width: 720px; margin-left: auto; margin-right: auto; }
+.isi { padding: 32px 0 64px; min-height: calc(100vh - 200px); }
+.tersembunyi { display: none !important; }
+
+h1 { font-size: 26px; font-weight: 800; margin: 0 0 20px; letter-spacing: -.5px; }
+h2 { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
+h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+p { margin: 0 0 12px; }
+a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi); }
+
+.petunjuk { color: var(--teks-lemah); font-size: 13px; }
+.galat { color: var(--dikembalikan); }
+
+/* Kepala */
+.kepala {
+  background: linear-gradient(135deg, #1B2547 0%, #23305C 55%, #2E3F7A 100%);
+  position: sticky; top: 0; z-index: 20;
+  box-shadow: 0 1px 0 rgba(23, 27, 38, .08);
+}
+.kepala-isi { display: flex; align-items: center; gap: 16px; min-height: 64px; flex-wrap: wrap; }
+.merek { text-decoration: none; color: #FFF; display: flex; align-items: center; gap: 10px; }
+/* Tanpa gradien teks. Pada layar biasa gradien putih ke biru muda cuma membuat
+   nama mereknya terlihat pudar sebelah, dan huruf putih pekat lebih tegas. */
+.merek-nama { font-weight: 800; font-size: 20px; letter-spacing: 1.5px; color: #FFF; }
+.merek-sub { font-size: 12px; color: rgba(255, 255, 255, .68); font-weight: 500; }
+.nav { display: flex; gap: 4px; margin-left: auto; }
+.nav a {
+  padding: 8px 16px; border-radius: 8px; text-decoration: none;
+  color: rgba(255, 255, 255, .75); font-size: 14px; font-weight: 500;
+  transition: var(--transisi);
+}
+.nav a:hover { background: rgba(255, 255, 255, .1); color: #FFF; }
+.nav a.aktif { background: rgba(255, 255, 255, .15); color: #FFF; font-weight: 600; }
+
+.pengumuman {
+  background: linear-gradient(90deg, #DBEAFE, #EFF6FF);
+  border-bottom: 1px solid var(--garis);
+  padding: 12px 20px; font-size: 14px; text-align: center;
+  font-weight: 500; color: var(--biru-tua); animation: slideDown .3s ease;
+}
+
+/* Sambutan halaman depan */
+.sambutan {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: fadeUp .4s ease both;
+}
+.sambutan h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  letter-spacing: -.5px;
+  color: var(--biru-tua);
+}
+.sambutan p {
+  margin: 0 auto;
+  max-width: 640px;
+  color: var(--teks-lemah);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.judul-bagian { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
+
+/**
+ * Daftar langkah bernomor pada halaman panduan.
+ *
+ * Nomornya digambar sendiri lewat counter, bukan penanda daftar bawaan: yang
+ * bawaan tidak bisa diberi lingkaran dan garis penghubung antar langkah.
+ */
+.panduan { list-style: none; counter-reset: langkah; padding: 0; margin: 0 0 8px; }
+.panduan li {
+  counter-increment: langkah;
+  position: relative;
+  padding: 0 0 22px 46px;
+  border-left: 2px solid var(--garis);
+  margin-left: 15px;
+}
+.panduan li:last-child { border-left-color: transparent; padding-bottom: 4px; }
+.panduan li:before {
+  content: counter(langkah);
+  position: absolute; left: -16px; top: -2px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--biru-utama), var(--biru-tua));
+  color: var(--putih); font-size: 14px; font-weight: 700;
+  box-shadow: var(--bayang-biru);
+}
+.panduan h3 { margin: 4px 0 6px; font-size: 15px; }
+.panduan p { margin: 0; }
+
+/* Daftar isi panduan dashboard. */
+.daftar-isi { margin: 0; padding-left: 20px; }
+.daftar-isi li { margin-bottom: 6px; font-size: 14px; }
+.daftar-isi li:last-child { margin-bottom: 0; }
+
+/**
+ * Butir penjelasan. Dipakai untuk daftar <ul> maupun <ol>; yang <ol> tetap
+ * bernomor sendiri karena penanda bawaannya tidak dimatikan di sini.
+ */
+.poin { margin: 0 0 12px; padding-left: 20px; }
+.poin li { margin-bottom: 8px; font-size: 14px; line-height: 1.6; }
+.poin li:last-child { margin-bottom: 0; }
+.poin .lencana { margin-right: 6px; }
+
+/* Judul bagian pada halaman panduan, supaya lompatan #anchor tidak terhalang
+   navbar yang menempel. */
+[id] { scroll-margin-top: 80px; }
+
+/* Kartu */
+.kartu {
+  background: var(--putih); border: 1px solid var(--garis);
+  border-radius: var(--sudut-besar); padding: 20px; margin-bottom: 16px;
+  box-shadow: var(--bayang); transition: var(--transisi);
+  animation: fadeUp .4s ease both;
+}
+.kartu-peringatan {
+  border-left: 4px solid var(--proses);
+  background: linear-gradient(to right, var(--proses-bg), var(--putih));
+}
+.kartu-tautan { cursor: pointer; text-decoration: none; color: inherit; display: block; }
+.kartu-tautan:hover {
+  box-shadow: var(--bayang-naik); border-color: var(--biru-aksen);
+  transform: translateY(-2px);
+}
+.kartu-tautan:focus-visible {
+  outline: 2px solid var(--biru-utama); outline-offset: 2px;
+}
+
+/**
+ * Garis status di tepi kiri kartu.
+ *
+ * Bukan hiasan: warnanya menyandikan status, sehingga keadaan sebuah pengajuan
+ * terbaca sebelum mata sampai ke lencana di pojok kanan atas. Lencananya tetap
+ * ada dan tetap bertuliskan katanya, karena warna sendirian tidak cukup bagi
+ * pembaca yang tidak bisa membedakannya.
+ */
+.kartu-status { position: relative; overflow: hidden; padding-left: 24px; }
+.kartu-status::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+}
+.kartu-status.s-proses::before { background: var(--proses); }
+.kartu-status.s-selesai::before { background: var(--selesai); }
+.kartu-status.s-dikembalikan::before { background: var(--dikembalikan); }
+
+/* Kotak hitungan */
+.hitungan { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.hitungan-kotak {
+  background: var(--putih); border: 1px solid var(--garis);
+  border-radius: var(--sudut-besar); padding: 20px; text-align: center;
+  box-shadow: var(--bayang); transition: var(--transisi);
+  animation: fadeUp .4s ease both;
+}
+.hitungan-kotak:nth-child(1) { animation-delay: 0s; }
+.hitungan-kotak:nth-child(2) { animation-delay: .05s; }
+.hitungan-kotak:nth-child(3) { animation-delay: .1s; }
+.hitungan-kotak:nth-child(4) { animation-delay: .15s; }
+/* Sengaja tanpa efek hover: kotak hitungan tidak bisa diklik, dan yang
+   bergerak saat disentuh kursor membaca sebagai tombol yang ternyata mati. */
+.hitungan-angka {
+  font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: -1.2px;
+  font-variant-numeric: tabular-nums;
+}
+.hitungan-label {
+  font-size: 11px; color: var(--teks-lemah); text-transform: uppercase;
+  letter-spacing: .8px; font-weight: 600; margin-top: 4px;
+}
+.hitungan-kotak.proses { border-bottom: 3px solid var(--proses); }
+.hitungan-kotak.proses .hitungan-angka { color: var(--proses); }
+.hitungan-kotak.selesai { border-bottom: 3px solid var(--selesai); }
+.hitungan-kotak.selesai .hitungan-angka { color: var(--selesai); }
+.hitungan-kotak.dikembalikan { border-bottom: 3px solid var(--dikembalikan); }
+.hitungan-kotak.dikembalikan .hitungan-angka { color: var(--dikembalikan); }
+
+/* Saringan dan isian */
+.saringan { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.saringan input[type="search"] { flex: 1 1 240px; }
+.saringan select { flex: 0 1 auto; width: auto; min-width: 140px; }
+
+/**
+ * Tab dashboard menempel tepat di bawah navbar.
+ *
+ * Tab-nya dipakai terus-menerus sambil menelusuri antrean yang panjang; kalau
+ * ikut tergulir, pindah tab berarti menggulir balik ke atas dulu.
+ *
+ * Margin negatif membuatnya membentang sampai tepi .wadah. Tanpa itu, kartu
+ * yang lewat di belakangnya menyembul di kiri dan kanan tab.
+ */
+.tab-bar {
+  position: sticky;
+  top: 64px;                /* setinggi .kepala */
+  z-index: 15;              /* di bawah .kepala (20), di atas kartu */
+  margin: 0 -20px 20px;
+  padding: 12px 20px;
+  background: var(--latar);
+  border-bottom: 1px solid var(--garis);
+}
+
+input, select, textarea {
+  width: 100%; padding: 10px 14px; font: inherit; color: inherit;
+  background: var(--putih); border: 1.5px solid var(--garis);
+  border-radius: 10px; transition: var(--transisi); font-size: 14px;
+}
+input:hover, select:hover, textarea:hover { border-color: #CBD5E1; }
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--biru-utama);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+label { display: block; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+label input, label select, label textarea { margin-top: 6px; font-weight: 400; }
+
+/**
+ * Kolom kata sandi dengan tombol lihat.
+ *
+ * Bantalan kanan kotak isian dilebarkan supaya teks yang panjang berhenti
+ * sebelum tombol, bukan lewat di bawahnya.
+ */
+.kolom-sandi { position: relative; display: block; margin-top: 6px; }
+/* Jarak atas pindah ke pembungkus, supaya `top: 50%` tombol mengukur tinggi
+   kotak isian saja dan ikonnya benar-benar di tengah. */
+.kolom-sandi input { padding-right: 44px; margin-top: 0; display: block; }
+.sandi-lihat {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0;
+  border: none; border-radius: 8px;
+  background: none; color: var(--teks-lemah); cursor: pointer;
+  transition: var(--transisi);
+}
+.sandi-lihat:hover { background: var(--biru-muda); color: var(--biru-utama); }
+.sandi-lihat:focus-visible { outline: 2px solid var(--biru-utama); outline-offset: -2px; }
+
+/* Tombol */
+.tombol {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 20px; border: 1.5px solid var(--garis); border-radius: 10px;
+  background: var(--putih); color: var(--teks-utama); font: inherit;
+  font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+  text-align: center; transition: var(--transisi);
+}
+.tombol:hover {
+  border-color: var(--biru-utama); color: var(--biru-utama);
+  transform: translateY(-1px); box-shadow: var(--bayang);
+}
+.tombol-utama {
+  background: linear-gradient(135deg, var(--biru-utama), var(--biru-tua));
+  border-color: transparent; color: var(--putih); box-shadow: var(--bayang-biru);
+}
+.tombol-utama:hover {
+  background: linear-gradient(135deg, var(--biru-tua), #1D3A8A);
+  transform: translateY(-1px); color: var(--putih);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, .35);
+}
+.tombol:disabled {
+  opacity: .5; cursor: not-allowed;
+  transform: none !important; box-shadow: none !important;
+}
+.tombol-baris { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* Lencana status */
+.lencana {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+  border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap;
+  letter-spacing: .06em;
+}
+.lencana::before { content: '\25CF'; font-size: 7px; }
+.lencana-proses { background: var(--proses-bg); color: var(--proses-teks); }
+.lencana-selesai { background: var(--selesai-bg); color: var(--selesai-teks); }
+.lencana-dikembalikan { background: var(--dikembalikan-bg); color: var(--dikembalikan-teks); }
+
+/* Daftar pengajuan */
+.baris-atas { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+/**
+ * Nomor pengajuan sengaja dibuat tenang: latar biru muda dan huruf tebal
+ * membuatnya bersaing dengan judul, padahal yang dicari mata lebih dulu adalah
+ * judulnya. Nomor baru berguna setelah berkasnya ketemu.
+ */
+.kode {
+  font-family: 'SF Mono', Consolas, monospace; font-size: 11.5px;
+  color: var(--teks-lemah); font-weight: 500; letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+.judul-pengajuan {
+  font-weight: 600; margin: 0 0 5px; font-size: 16px;
+  line-height: 1.35; letter-spacing: -.01em; color: var(--teks-utama);
+}
+.meta { font-size: 12.5px; color: var(--teks-lemah); font-weight: 500; }
+
+/**
+ * Rel tahap di kaki kartu. Posisinya dikirim server lewat `tahap_indeks`;
+ * lihat components/JejakTahap.tsx dan server/src/pure/tahap.ts.
+ */
+.jejak { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--garis); }
+.jejak-rel {
+  list-style: none; margin: 0 0 9px; padding: 0;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+}
+.jejak-titik { position: relative; padding-top: 15px; min-width: 0; }
+
+/* Rel penghubung. Satu ruas per stasiun, membentang selebar selnya dan
+   terpusat di titiknya, jadi separuh kiri adalah ruas masuk dan separuh kanan
+   ruas keluar. Ruas pertama dan terakhir dipotong supaya rel tidak menjulur
+   keluar dari titik ujung. */
+.jejak-titik::before {
+  content: ''; position: absolute; top: 4px; left: 0; right: 0;
+  height: 2px; background: var(--garis);
+}
+.jejak-titik:first-child::before { left: 50%; }
+.jejak-titik:last-child::before { right: 50%; }
+.jejak-titik.lewat::before { background: var(--biru-utama); }
+.jejak-titik.kini::before {
+  background: linear-gradient(90deg, var(--biru-utama) 50%, var(--garis) 50%);
+}
+
+.jejak-titik::after {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--putih); border: 2px solid var(--garis);
+}
+.jejak-titik.lewat::after { background: var(--biru-utama); border-color: var(--biru-utama); }
+.jejak-titik.kini::after {
+  background: var(--proses); border-color: var(--proses);
+  box-shadow: 0 0 0 3px var(--proses-bg);
+}
+
+.jejak-label {
+  display: block; text-align: center; font-size: 10px; line-height: 1.3;
+  color: var(--teks-lemah); font-weight: 500;
+}
+.jejak-titik.lewat .jejak-label { color: var(--biru-utama); }
+.jejak-titik.kini .jejak-label { color: var(--teks-utama); font-weight: 700; }
+
+.jejak-catatan {
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: nowrap;
+  margin: 0; font-size: 12.5px; color: var(--teks-lemah);
+}
+.jejak-kabar {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.jejak-hitung { margin-left: auto; font-weight: 600; font-size: 11.5px; white-space: nowrap; }
+
+/* Di halaman detail rel berdiri sendiri di dalam kartunya, jadi garis pemisah
+   atasnya tidak memisahkan apa pun dan hanya menambah satu garis. */
+.jejak-kartu .jejak { margin-top: 0; padding-top: 0; border-top: none; }
+
+/**
+ * Panel kelola riwayat di dashboard.
+ *
+ * Barisnya sengaja tidak dibuat sebagai tabel: tiap baris punya keterangan
+ * berupa kalimat panjang, dan tabel memaksa kalimat itu masuk ke satu sel
+ * sempit yang membungkus di tempat yang salah.
+ */
+.riwayat-sunting { list-style: none; margin: 16px 0 0; padding: 0; }
+.riwayat-sunting > li {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 0; border-top: 1px solid var(--garis);
+}
+.riwayat-sunting > li:last-child { border-bottom: 1px solid var(--garis); }
+.riwayat-isi { flex: 1 1 260px; min-width: 0; }
+.riwayat-kepala {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 0 0 2px;
+}
+.riwayat-tahap { font-weight: 600; font-size: 14px; color: var(--teks-utama); }
+
+/* Nomor stasiun ditulis di sebelah nama tahapnya, bukan disembunyikan di
+   tooltip: inilah satu-satunya tempat hubungan "tahap ini yang mana di rel"
+   bisa terbaca tanpa menebak. */
+.riwayat-stasiun {
+  font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--biru-muda); color: var(--biru-tua);
+}
+.riwayat-keterangan { margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; }
+.riwayat-sunting .tombol-baris { margin-top: 0; flex: 0 0 auto; }
+
+.riwayat-form {
+  padding: 16px; margin-top: 16px;
+  background: var(--latar); border: 1px solid var(--garis); border-radius: var(--sudut);
+}
+.riwayat-form label:first-child { margin-top: 0; }
+.riwayat-sunting .riwayat-form { flex: 1 1 100%; margin-top: 0; }
+
+/* Peringatan yang harus terbaca sebelum tombol Simpan ditekan, bukan sesudah:
+   memilih tahap di luar rel adalah cara paling sering rel jadi kosong. */
+.petunjuk-awas { color: var(--proses-teks); font-weight: 500; }
+
+.tombol-bahaya { color: var(--dikembalikan-teks); border-color: var(--dikembalikan-bg); }
+.tombol-bahaya:hover {
+  background: var(--dikembalikan-bg); color: var(--dikembalikan-teks);
+  border-color: var(--dikembalikan);
+}
+
+/* Lini masa */
+.linimasa { list-style: none; margin: 0; padding: 0; }
+.linimasa li { position: relative; padding: 0 0 24px 32px; border-left: 2px solid var(--garis); }
+.linimasa li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.linimasa li::before {
+  content: ''; position: absolute; left: -8px; top: 4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--putih); border: 3px solid var(--biru-aksen);
+  transition: var(--transisi);
+}
+.linimasa li.terbaru::before {
+  background: var(--biru-utama); border-color: var(--biru-utama);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .15);
+}
+.linimasa-tanggal { font-weight: 700; font-size: 13px; }
+.linimasa-tahap {
+  font-size: 11px; color: var(--teks-lemah); text-transform: uppercase;
+  letter-spacing: .6px; font-weight: 600;
+}
+
+/* Daftar berkas */
+.berkas { list-style: none; margin: 0; padding: 0; }
+.berkas li {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--garis); transition: var(--transisi);
+}
+.berkas li:last-child { border-bottom: none; }
+.berkas-nama { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.berkas-ukuran {
+  font-size: 12px; color: var(--teks-lemah); white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* Progress unggah */
+.progress {
+  height: 6px; background: var(--garis); border-radius: 999px;
+  overflow: hidden; margin-top: 8px;
+}
+.progress span {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--biru-utama), var(--biru-aksen));
+  width: 0; transition: width .3s ease; border-radius: 999px;
+}
+
+/* Langkah form */
+.langkah { list-style: none; display: flex; gap: 4px; padding: 0; margin: 0 0 24px; flex-wrap: wrap; }
+.langkah li {
+  flex: 1 1 90px; text-align: center; font-size: 12px; color: var(--teks-lemah);
+  padding-top: 24px; position: relative; font-weight: 600;
+}
+.langkah li::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 14px; height: 14px; border-radius: 50%; background: var(--putih);
+  border: 3px solid var(--garis); transition: var(--transisi); z-index: 1;
+}
+.langkah li.aktif { color: var(--biru-tua); }
+.langkah li.aktif::before {
+  background: var(--biru-utama); border-color: var(--biru-utama);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .15);
+}
+
+.pilihan-jenis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pilihan-jenis .kartu { margin: 0; text-align: center; border: 2px solid var(--garis); padding: 24px; }
+.pilihan-jenis .kartu:hover { border-color: var(--biru-aksen); }
+.pilihan-jenis .kartu.aktif {
+  border-color: var(--biru-utama); background: var(--biru-muda);
+  box-shadow: var(--bayang-biru);
+}
+/**
+ * Pemilih sumber migrasi: dua kartu berdampingan, sama seperti pilihan jenis
+ * peraturan di form pengajuan.
+ */
+.pilihan-sumber { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.pilihan-sumber .kartu { margin: 0; padding: 16px; border: 2px solid var(--garis); }
+.pilihan-sumber .kartu:hover { border-color: var(--biru-aksen); }
+.pilihan-sumber .kartu.aktif {
+  border-color: var(--biru-utama);
+  background: var(--biru-muda);
+  box-shadow: var(--bayang-biru);
+}
+
+.kolom-berkas { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--garis); }
+.kolom-berkas:last-child { border-bottom: none; margin-bottom: 0; }
+
+/* Tabel */
+.tabel-bungkus { overflow-x: auto; border-radius: var(--sudut); }
+
+/**
+ * Tabel yang isinya boleh membungkus.
+ *
+ * `th, td { white-space: nowrap }` cocok untuk tabel rekap yang angkanya
+ * pendek, tapi menyakitkan untuk daftar OPD: satu nama sepanjang "Badan
+ * Perencanaan Pembangunan, Riset dan Inovasi Daerah" mendorong kolom tombol
+ * keluar layar, jadi tombolnya baru terlihat setelah tabel digeser.
+ *
+ * Kolom terakhir tetap nowrap dan selebar isinya (`width: 1%` membuat tabel
+ * menyusutkannya sampai sesempit mungkin), supaya tombol tidak pernah patah
+ * di tengah dan sisa ruang jatuh ke kolom teks.
+ */
+.tabel-lentur th, .tabel-lentur td { white-space: normal; }
+.tabel-lentur td:last-child { white-space: nowrap; width: 1%; text-align: right; }
+.tabel-lentur td:last-child .tombol { padding: 8px 12px; font-size: 13px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--garis); white-space: nowrap; }
+th {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--teks-lemah); font-weight: 700; background: var(--latar);
+}
+tbody tr { transition: var(--transisi); }
+tbody tr:hover { background: var(--biru-muda); }
+
+/* Notifikasi */
+.notifikasi {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: var(--teks-utama); color: var(--putih); padding: 12px 24px;
+  border-radius: var(--sudut); box-shadow: var(--bayang-naik); font-size: 14px;
+  max-width: calc(100% - 40px); z-index: 40; font-weight: 500;
+  animation: slideDown .3s ease;
+}
+.notifikasi.galat { background: var(--dikembalikan); }
+.notifikasi.sukses { background: var(--selesai); }
+
+/* Kaki */
+.kaki {
+  border-top: 1px solid var(--garis);
+  background: linear-gradient(135deg, #F8FAFC, #F0F4F8);
+  padding: 28px 0; font-size: 13px; color: var(--teks-lemah);
+}
+.kaki p { margin: 0 0 4px; }
+.kaki-isi { text-align: center; }
+
+/**
+ * Ponsel.
+ *
+ * Yang dikejar di sini satu hal: pengunjung harus melihat pengajuan pertama
+ * tanpa menggulir. Versi sebelumnya menumpuk sambutan, empat kotak hitungan
+ * berbantalan tebal, lalu empat baris saringan selebar layar -- hampir satu
+ * layar penuh terpakai sebelum ada isi yang terlihat.
+ */
+@media (max-width: 640px) {
+  h1 { font-size: 22px; }
+  .wadah { padding: 0 14px; }
+  .isi { padding: 16px 0 40px; }
+
+  /* Navigasi tetap sebaris dengan merek. Satu baris penuh untuk dua tautan
+     memakan tinggi yang lebih berguna untuk isi. */
+  .kepala-isi { gap: 8px; min-height: 52px; flex-wrap: nowrap; }
+  .merek-nama { font-size: 16px; letter-spacing: .5px; }
+  .merek-sub { display: none; }        /* sudah disebut lengkap di sambutan */
+  /* Tiga tautan plus merek harus muat di 320px tanpa membungkus. */
+  .nav { margin-left: auto; gap: 0; }
+  .nav a { padding: 6px 8px; font-size: 12.5px; }
+
+  .sambutan { margin-bottom: 18px; }
+  .sambutan h1 { font-size: 20px; }
+  .sambutan p { font-size: 12.5px; line-height: 1.55; }
+  .judul-bagian { font-size: 15px; margin-bottom: 10px; }
+
+  /* Empat kotak jadi satu baris. Susunan 2x2 berbantalan 20px mendorong daftar
+     pengajuan turun hampir satu layar penuh. */
+  .hitungan { grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 16px; }
+  .hitungan-kotak { padding: 10px 3px; border-radius: 12px; }
+  .hitungan-angka { font-size: 20px; letter-spacing: -.5px; }
+  .hitungan-label { font-size: 9px; letter-spacing: .2px; margin-top: 2px; }
+
+  /* Tiga saringan berbagi satu baris, bukan tiga baris penuh. */
+  .saringan { gap: 7px; margin-bottom: 14px; }
+  .saringan input[type="search"] { flex: 1 1 100%; }
+  .saringan select {
+    flex: 1 1 calc(33.333% - 5px);
+    width: auto; min-width: 0;
+    font-size: 12.5px; padding: 8px 6px;
+  }
+
+  .kartu { padding: 14px; border-radius: 12px; margin-bottom: 12px; }
+  .kartu-status { padding-left: 18px; }
+  .judul-pengajuan { font-size: 14.5px; }
+  .baris-atas { flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .meta { font-size: 12px; }
+
+  /**
+   * Label stasiun disembunyikan di ponsel, titiknya tetap.
+   *
+   * Enam label di layar 320px menyisakan sekitar 53px per kolom, dan "Pra
+   * Harmonisasi" membungkus jadi dua baris -- relnya sendiri lalu setinggi
+   * judul pengajuan. Titik plus baris "Tahap 4 dari 6" di bawahnya sudah
+   * menyampaikan hal yang sama dengan tinggi seperempatnya.
+   */
+  .jejak { margin-top: 10px; padding-top: 9px; }
+  .jejak-label { display: none; }
+  .jejak-titik { padding-top: 12px; }
+  .jejak-rel { margin-bottom: 7px; }
+  .jejak-catatan { font-size: 12px; }
+
+  .tombol-baris { flex-direction: column-reverse; }
+  .tombol-baris .tombol { width: 100%; }
+
+  /* Ubah dan Hapus tetap bersanding di ponsel. Keduanya milik satu baris
+     riwayat, dan menumpuknya penuh lebar membuat daftar sepuluh baris jadi
+     dua puluh tombol yang tidak lagi jelas milik baris yang mana. */
+  .riwayat-sunting .tombol-baris { flex-direction: row; width: 100%; }
+  .riwayat-sunting .tombol-baris .tombol { width: auto; flex: 1 1 0; }
+
+  .pilihan-jenis, .pilihan-sumber { grid-template-columns: 1fr; }
+  .linimasa li { padding: 0 0 18px 24px; }
+
+  /* Tab dashboard menggeser mendatar daripada menumpuk jadi tujuh baris.
+     Sengaja kelas tersendiri: .saringan di monitoring justru HARUS membungkus
+     supaya pencarian dapat satu baris penuh dan tiga penyaring berbagi baris
+     di bawahnya. */
+  .tab-bar {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    top: 52px;                     /* .kepala lebih pendek di ponsel */
+    margin: 0 -14px 16px; padding: 10px 14px;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar > .tombol { flex: 0 0 auto; }
+
+  /**
+   * Tabel .tabel-lentur berubah jadi tumpukan kartu.
+   *
+   * Empat kolom di layar 375px menyisakan sekitar 85px per kolom. Judul seperti
+   * "Surat Permohonan Rancangan Perda/Perbup" lalu membungkus jadi enam baris,
+   * dan satu baris tabel setinggi setengah layar. Menggesernya mendatar juga
+   * bukan jawaban -- tombol di kolom terakhir jadi tersembunyi.
+   *
+   * Judul kolom dibaca dari data-label tiap sel, jadi maknanya tidak hilang
+   * meski <thead> disembunyikan.
+   */
+  .tabel-lentur thead { display: none; }
+  .tabel-lentur, .tabel-lentur tbody, .tabel-lentur tr, .tabel-lentur td {
+    display: block; width: 100%;
+  }
+  .tabel-lentur tr {
+    background: var(--putih);
+    border: 1px solid var(--garis);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .tabel-lentur tr:hover { background: var(--putih); }
+  .tabel-lentur td {
+    border: none;
+    padding: 4px 0;
+    width: auto !important;
+    text-align: left !important;
+    white-space: normal;
+  }
+  .tabel-lentur td[data-label]:before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .6px;
+    color: var(--teks-lemah);
+    margin-bottom: 2px;
+  }
+  .tabel-lentur td:empty { display: none; }
+  .tabel-lentur td:last-child { padding-top: 8px; }
+  .tabel-lentur td:last-child .tombol { width: 100%; margin-bottom: 6px; }
+  .tabel-lentur td:last-child .tombol:last-child { margin-bottom: 0; }
+
+  /* Daftar berkas: nama dan ukuran berdesakan kalau tetap sebaris. */
+  .berkas li { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .berkas-ukuran { width: 100%; justify-content: space-between; }
+
+  .panduan li { padding-left: 38px; margin-left: 13px; }
+  .panduan li:before { width: 26px; height: 26px; left: -14px; font-size: 13px; }
+}
+
+/* Hormati pengguna yang mematikan animasi di sistemnya. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
