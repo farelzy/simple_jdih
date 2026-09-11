@@ -197,6 +197,23 @@ a { color: var(--biru-utama); text-decoration: none; transition: var(--transisi)
    navbar yang menempel. */
 [id] { scroll-margin-top: 80px; }
 
+/**
+ * Penanda kesegaran data.
+ *
+ * Sengaja tenang: ia perlu ada supaya pengunjung tahu yang dilihatnya baru,
+ * tapi tidak boleh bersaing perhatian dengan daftar pengajuannya sendiri.
+ */
+.status-data {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  background: var(--putih);
+  border: 1px solid var(--garis);
+  border-radius: 10px;
+}
+.tombol-kecil { padding: 6px 12px; font-size: 13px; }
+
 /* Kartu */
 .kartu {
   background: var(--putih); border: 1px solid var(--garis);
@@ -747,6 +764,8 @@ tbody tr:hover { background: var(--biru-muda); }
   .berkas li { flex-direction: column; align-items: flex-start; gap: 6px; }
   .berkas-ukuran { width: 100%; justify-content: space-between; }
 
+  .status-data { flex-direction: column; align-items: stretch; gap: 8px; }
+  .status-data .tombol { width: 100%; }
   .panduan li { padding-left: 38px; margin-left: 13px; }
   .panduan li:before { width: 26px; height: 26px; left: -14px; font-size: 13px; }
 }

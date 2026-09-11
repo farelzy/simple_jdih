@@ -17,6 +17,11 @@ import { susunDariBaris } from '../src/pure/sheet';
 /**
  * Berapa lama jawaban boleh dipakai ulang sebelum ditarik lagi.
  *
+ * Tiga puluh detik, setengah dari jeda penyegaran klien (45 detik), supaya
+ * tarikan berkala itu hampir selalu menemui simpanan yang sudah lewat
+ * tenggang dan benar-benar membawa yang terbaru -- bukan mengambil salinan
+ * yang usianya nyaris sama.
+ *
  * Endpoint ekspor Google adalah layanan seadanya, bukan API dengan jaminan.
  * Tanpa tenggang ini, setiap pengunjung jadi satu tarikan -- dan kalau tautan
  * situs tersebar di grup OPD lalu dibuka serempak, situs ikut selambat Google
@@ -27,7 +32,7 @@ import { susunDariBaris } from '../src/pure/sheet';
  * Vercel menyegarkannya di belakang layar -- termasuk saat Google sedang
  * bermasalah, sampai lima menit.
  */
-const TENGGANG_DETIK = 60;
+const TENGGANG_DETIK = 30;
 const BASI_DETIK = 300;
 
 function konfig(): { id: string; gid: string } {

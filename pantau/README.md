@@ -71,6 +71,27 @@ Jangan menyortir atau menghapus baris, karena nomornya ikut bergeser.
 
 ## Kesegaran data
 
+Sedekat mungkin dengan realtime, tanpa pernah benar-benar realtime — spreadsheet
+tidak bisa mendorong pemberitahuan ke situs, yang ada hanya menarik berkala.
+
+| Lapis | Perilaku |
+|---|---|
+| Tepi Vercel | tarikan ke Google paling sering sekali per 30 detik |
+| Halaman | menyegarkan sendiri tiap 45 detik **selama tabnya terlihat** |
+| Kembali ke tab | langsung menarik bila simpanannya sudah lewat tenggang |
+| Tombol Segarkan | menarik saat itu juga |
+
+Tab yang tertinggal terbuka semalaman tidak menarik apa pun; pemeriksaan saat
+kembali terlihat yang mengejar ketinggalannya. Dengan begitu perubahan status
+yang disunting Bagian Hukum muncul di layar OPD dalam hitungan puluhan detik,
+sementara Google tetap dihubungi paling banyak dua kali per menit berapa pun
+jumlah pengunjungnya.
+
+Penyegaran yang gagal **tidak mengosongkan halaman**: data terakhir tetap
+ditampilkan dan hanya ditandai di penanda kesegaran.
+
+### Tenggang lama (acuan)
+
 `api/data.ts` menarik paling sering sekali per 60 detik; sisanya dilayani dari
 simpanan tepi Vercel. `stale-while-revalidate` membuat pengunjung tidak pernah
 menunggu Google — mereka langsung menerima salinan terakhir sementara

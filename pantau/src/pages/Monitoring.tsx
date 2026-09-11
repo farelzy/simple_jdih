@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { muatData, type DataSitus } from '../lib/data';
+import { usePantau } from '../lib/data';
 import { formatTanggal } from '../lib/format';
 import { KotakHitungan } from '../components/KotakHitungan';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { JejakTahap } from '../components/JejakTahap';
+import { StatusData } from '../components/StatusData';
 
 const KELAS_STATUS: Record<string, string> = {
   PROSES: 's-proses',
@@ -13,16 +14,11 @@ const KELAS_STATUS: Record<string, string> = {
 };
 
 export function Monitoring() {
-  const [data, setData] = useState<DataSitus | null>(null);
-  const [galat, setGalat] = useState('');
+  const { data, galat, menyegarkan } = usePantau();
   const [cari, setCari] = useState('');
   const [jenis, setJenis] = useState('');
   const [status, setStatus] = useState('');
   const [tahun, setTahun] = useState('');
-
-  useEffect(() => {
-    muatData().then(setData).catch((e: Error) => setGalat(e.message));
-  }, []);
 
   // Penyaringan di sisi klien: barisnya puluhan, bukan ribuan, jadi memuat
   // sekali lalu menyaring di memori terasa seketika.
@@ -38,7 +34,7 @@ export function Monitoring() {
     });
   }, [data, cari, jenis, status, tahun]);
 
-  if (galat) {
+  if (galat && !data) {
     return (
       <div className="kartu kartu-peringatan">
         <h2>Data tidak bisa dibaca</h2>
@@ -95,9 +91,10 @@ export function Monitoring() {
         </select>
       </div>
 
+      <StatusData ditarik={data.ditarik} menyegarkan={menyegarkan} galat={galat} />
+
       <p className="petunjuk">
         {hasil.length} dari {data.daftar.length} pengajuan
-        {data.ditarik && <> &middot; data per {formatJam(data.ditarik)}</>}
       </p>
 
       {hasil.length === 0 ? (
@@ -125,15 +122,4 @@ export function Monitoring() {
       )}
     </>
   );
-}
-
-/** '2026-09-11T04:30:00.000Z' -> '11 September 2026, 11.30 WIB' */
-function formatJam(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    day: 'numeric', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  }).format(d) + ' WIB';
 }

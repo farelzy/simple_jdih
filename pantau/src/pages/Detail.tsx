@@ -1,31 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { muatData, type PengajuanPantau } from '../lib/data';
+import { usePantau } from '../lib/data';
 import { formatTanggal } from '../lib/format';
 import { LencanaStatus } from '../components/LencanaStatus';
 import { LiniMasa } from '../components/LiniMasa';
 import { JejakTahap } from '../components/JejakTahap';
+import { StatusData } from '../components/StatusData';
 
 export function Detail() {
   const { nomor } = useParams<{ nomor: string }>();
-  const [p, setP] = useState<PengajuanPantau | null>(null);
-  const [galat, setGalat] = useState('');
-  const [memuat, setMemuat] = useState(true);
+  // Kumpulan yang sama dengan monitoring, jadi berpindah halaman tidak
+  // menarik apa pun dari jaringan -- dan penyegaran berkala ikut berjalan
+  // di sini, sehingga status yang diubah Bagian Hukum muncul sendiri.
+  const { data, galat, menyegarkan } = usePantau();
+  const p = useMemo(
+    () => data?.daftar.find((x) => x.nomor === nomor) ?? null,
+    [data, nomor]
+  );
 
-  useEffect(() => {
-    setMemuat(true);
-    setGalat('');
-    muatData()
-      // Detail memakai kumpulan yang sama dengan monitoring, jadi berpindah
-      // halaman tidak menarik apa pun dari jaringan.
-      .then((d) => setP(d.daftar.find((x) => x.nomor === nomor) ?? null))
-      .catch((e: Error) => setGalat(e.message))
-      .finally(() => setMemuat(false));
-  }, [nomor]);
+  if (!data && !galat) return <p className="petunjuk">Memuat&hellip;</p>;
 
-  if (memuat) return <p className="petunjuk">Memuat&hellip;</p>;
-
-  if (galat) {
+  if (galat && !data) {
     return (
       <div className="kartu kartu-peringatan">
         <h2>Data tidak bisa dibaca</h2>
@@ -65,6 +60,8 @@ export function Detail() {
       <div className="kartu jejak-kartu">
         <JejakTahap indeks={p.tahap_indeks} total={p.tahap_total} />
       </div>
+
+      <StatusData ditarik={data?.ditarik} menyegarkan={menyegarkan} galat={galat} />
 
       {p.keterangan && (
         <div className="kartu kartu-peringatan">
